@@ -3,8 +3,8 @@ import 'package:get_it/get_it.dart';
 import 'package:logger/logger.dart';
 import 'package:money/models/account.model.dart';
 import 'package:money/models/movement.model.dart';
-import 'package:money/repositories/accounts.repository.dart';
 import 'package:money/repositories/base.repository.dart';
+import 'package:money/services/database.service.dart';
 import 'package:sqflite/sqflite.dart';
 
 class MovementsRepository extends BaseRepository<Movement> {
@@ -20,6 +20,7 @@ class MovementsRepository extends BaseRepository<Movement> {
   ];
 
   var logger = GetIt.instance.get<Logger>();
+  var databaseService = GetIt.instance.get<DatabaseService>();
 
   MovementsRepository(Database db): super(db, 'movements', MovementsRepository.movementColumns);
 
@@ -44,11 +45,11 @@ class MovementsRepository extends BaseRepository<Movement> {
     var type = MovementType.values.byName(typeString);
     Account? source;
     if (map.containsKey('source') && map['source'] != null) {
-      source = GetIt.instance.get<AccountsRepository>().mapToModel(map['source'] as Map<String, Object?>);
+      source = databaseService.accountsRepository.mapToModel(map['source'] as Map<String, Object?>);
     }
     Account? target;
     if (map.containsKey('target') && map['target'] != null) {
-      target = GetIt.instance.get<AccountsRepository>().mapToModel(map['target'] as Map<String, Object?>);
+      target = databaseService.accountsRepository.mapToModel(map['target'] as Map<String, Object?>);
     }
     return Movement(
       type,
@@ -65,14 +66,13 @@ class MovementsRepository extends BaseRepository<Movement> {
   @override
   Future<List<Movement>> find({ List<String>? columns, String? where, List<Object?> args = const[], int? limit, int? offset, String? orderBy }) async {
     await GetIt.instance.allReady();
-    var accountsRepository = GetIt.instance.get<AccountsRepository>();
     List<String> fullColumns = [];
     for (var movementColumn in columnDefinitions) {
       if (columns == null || columns.contains(movementColumn.name)) {
         fullColumns.add('movement.${ movementColumn.name } AS movement_${ movementColumn.name }');
       }
     }
-    for (var accountColumn in accountsRepository.columnDefinitions) {
+    for (var accountColumn in databaseService.accountsRepository.columnDefinitions) {
       fullColumns.add('source.${accountColumn.name} AS source_${accountColumn.name}');
       fullColumns.add('target.${accountColumn.name} AS target_${accountColumn.name}');
     }

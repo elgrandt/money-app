@@ -2,8 +2,7 @@
 import 'package:flutter/material.dart';
 import 'package:get_it/get_it.dart';
 import 'package:money/models/account.model.dart';
-import 'package:money/repositories/accounts.repository.dart';
-import 'package:money/views/generics/currency_selector.dart';
+import 'package:money/services/database.service.dart';
 import 'package:money/views/new_account/new_account.dialog.dart';
 
 class AccountsListDialog extends StatefulWidget {
@@ -16,6 +15,8 @@ class AccountsListDialog extends StatefulWidget {
 }
 
 class _AccountsListDialogState extends State<AccountsListDialog> {
+
+  var databaseService = GetIt.instance.get<DatabaseService>();
 
   Future<void> openNewAccountDialog() async {
     var result = await showDialog<Account?>(context: context, builder: (context) {
@@ -65,7 +66,7 @@ class _AccountsListDialogState extends State<AccountsListDialog> {
         IconButton(
           icon: Icon(Icons.delete, color: Colors.red.shade900),
           onPressed: () {
-            GetIt.instance.get<AccountsRepository>().delete(account.id!);
+            databaseService.accountsRepository.delete(account.id!);
             if (!context.mounted) return;
             Navigator.of(context).pop(account);
           },
@@ -90,7 +91,7 @@ class _AccountsListDialogState extends State<AccountsListDialog> {
             style: ElevatedButton.styleFrom(
               backgroundColor: Theme.of(context).primaryColor,
               foregroundColor: Colors.white,
-              fixedSize: const Size(150, 30),
+              fixedSize: const Size(170, 30),
             ),
             onPressed: () {
               openNewAccountDialog();

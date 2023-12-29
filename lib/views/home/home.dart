@@ -1,12 +1,10 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/widgets.dart';
 import 'package:get_it/get_it.dart';
 import 'package:logger/logger.dart';
 import 'package:money/models/account.model.dart';
 import 'package:money/models/movement.model.dart';
-import 'package:money/repositories/accounts.repository.dart';
-import 'package:money/repositories/movements.repository.dart';
+import 'package:money/services/database.service.dart';
 import 'package:money/services/utils.service.dart';
 import 'package:money/views/accounts_list/accounts_list.dialog.dart';
 import 'package:money/views/generics/currency_selector.dart';
@@ -31,6 +29,8 @@ class Home extends StatefulWidget {
 }
 
 class _HomeState extends State<Home> {
+  var databaseService = GetIt.instance.get<DatabaseService>();
+  var logger = GetIt.instance.get<Logger>();
 
   List<Account>? accounts;
   int selectedTabIndex = 0;
@@ -43,16 +43,16 @@ class _HomeState extends State<Home> {
   }
 
   Future<void> getAccounts() async {
-    await GetIt.instance.allReady();
-    var accountsRepository = GetIt.instance.get<AccountsRepository>();
+    await databaseService.initialized;
     try {
-      var accounts = await accountsRepository.find();
+      logger.d('Getting accounts');
+      var accounts = await databaseService.accountsRepository.find();
       setState(() {
         tabKeys = [GlobalKey<_HomeTabState>(), ...accounts.map((e) => GlobalKey<_HomeTabState>()).toList()];
         this.accounts = accounts;
       });
     } catch (error, stackTrace) {
-      GetIt.instance.get<Logger>().e('Error getting accounts', error: error, stackTrace: stackTrace);
+      logger.e('Error getting accounts', error: error, stackTrace: stackTrace);
     }
   }
 
@@ -244,6 +244,7 @@ class _MovementsListState extends State<MovementsList> {
   List<Movement>? movements;
   int page = 0;
   int itemsPerPage = 10;
+  var databaseService = GetIt.instance.get<DatabaseService>();
 
   @override
   void initState() {
@@ -260,10 +261,9 @@ class _MovementsListState extends State<MovementsList> {
   }
 
   Future<void> getMovements() async {
-    await GetIt.instance.allReady();
-    var movementsRepository = GetIt.instance.get<MovementsRepository>();
+    await databaseService.initialized;
     try {
-      var movements = await movementsRepository.getLastMovements(widget.account, page, itemsPerPage);
+      var movements = await databaseService.movementsRepository.getLastMovements(widget.account, page, itemsPerPage);
       setState(() {
         this.movements = movements;
       });

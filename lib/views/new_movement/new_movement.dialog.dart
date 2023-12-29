@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:get_it/get_it.dart';
 import 'package:money/models/account.model.dart';
 import 'package:money/models/movement.model.dart';
-import 'package:money/repositories/movements.repository.dart';
+import 'package:money/services/database.service.dart';
 import 'package:money/services/utils.service.dart';
 import 'package:money/views/generics/button_selector.dart';
 import 'package:money/views/generics/cupertino_select.dart';
@@ -42,6 +42,7 @@ class _NewMovementDialogState extends State<NewMovementDialog> {
 
   final amountInputController = MoneyMaskedTextController(decimalSeparator: '', thousandSeparator: '.', precision: 0);
   final descriptionInputController = TextEditingController();
+  var databaseService = GetIt.instance.get<DatabaseService>();
 
   get canSubmit {
     return _formKey.currentState != null && _formKey.currentState!.validate();
@@ -68,7 +69,8 @@ class _NewMovementDialogState extends State<NewMovementDialog> {
       source: movementType == MovementType.REMOVE || movementType == MovementType.TRANSFER ? source : null,
       target: movementType == MovementType.ADD || movementType == MovementType.TRANSFER ? target : null,
     );
-    var result = await GetIt.instance.get<MovementsRepository>().insert(movement);
+    await databaseService.initialized;
+    var result = await databaseService.movementsRepository.insert(movement);
     if (!context.mounted) return;
     Navigator.of(context).pop(result);
   }

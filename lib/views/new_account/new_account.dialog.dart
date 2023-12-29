@@ -2,7 +2,7 @@
 import 'package:flutter/material.dart';
 import 'package:get_it/get_it.dart';
 import 'package:money/models/account.model.dart';
-import 'package:money/repositories/accounts.repository.dart';
+import 'package:money/services/database.service.dart';
 import 'package:money/views/generics/currency_selector.dart';
 
 class NewAccountDialog extends StatefulWidget {
@@ -16,6 +16,7 @@ class _NewAccountDialogState extends State<NewAccountDialog> {
   final _formKey = GlobalKey<FormState>();
   Currency currency = Currency.ARS;
   final nameInputController = TextEditingController();
+  var databaseService = GetIt.instance.get<DatabaseService>();
 
   get canSubmit {
     return _formKey.currentState != null && _formKey.currentState!.validate();
@@ -27,7 +28,8 @@ class _NewAccountDialogState extends State<NewAccountDialog> {
       total: 0,
       currency: currency,
     );
-    var result = await GetIt.instance.get<AccountsRepository>().insert(account);
+    await databaseService.initialized;
+    var result = await databaseService.accountsRepository.insert(account);
     if (!context.mounted) return;
     Navigator.of(context).pop(result);
   }

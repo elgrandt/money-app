@@ -40,7 +40,7 @@ class MigrationsRepository extends BaseRepository<Migration> {
     for (var migrationDefinition in migrationDefinitions) {
       var ran = migrationsRan.contains(migrationDefinition.name);
       if (!ran) {
-        runMigration(migrationDefinition.name);
+        await runMigration(migrationDefinition.name);
       }
     }
   }
