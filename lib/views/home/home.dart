@@ -132,7 +132,7 @@ class _HomeState extends State<Home> {
         selectedTabIndex = index;
       }),
       tabs: [
-        tabs.Tab(name: 'Dashboard', body: const Dashboard()),
+        tabs.Tab(name: 'Dashboard', body: Dashboard(accounts: accounts!)),
         ...accounts!.asMap().map((index, account) =>
             MapEntry(index, tabs.Tab(name: account.name, body: HomeTab(account: account, accounts: accounts!, key: tabKeys[index + 1], openAccountListDialog: openAccountListDialog)))
         ).values
@@ -183,7 +183,7 @@ class _HomeTabState extends State<HomeTab> {
         drawEditAccountButton(context),
         const SizedBox(height: 10),
         CurrencySelector(selected: currency, onSelectionChange: (newValue) => setState(() { currency = newValue; })),
-        TotalViewer(account: widget.account, accounts: widget.accounts, currency: currency),
+        TotalViewer(account: widget.account, accounts: widget.accounts, currency: currency, padding: const EdgeInsets.symmetric(vertical: 30)),
         MovementsList(account: widget.account, currency: currency, key: movementsKey),
       ],
     );

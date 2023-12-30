@@ -8,8 +8,9 @@ class TotalViewer extends StatelessWidget {
   final Account? account;
   final List<Account> accounts;
   final Currency currency;
+  final EdgeInsets? padding;
 
-  const TotalViewer({ super.key, this.account, required this.accounts, required this.currency });
+  const TotalViewer({ super.key, this.account, required this.accounts, required this.currency, this.padding });
 
   String totalString() {
     var utilsService = GetIt.instance.get<UtilsService>();
@@ -28,8 +29,8 @@ class TotalViewer extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
+      padding: padding,
       alignment: Alignment.center,
-      height: 140,
       child: Text(totalString(), style: const TextStyle(fontSize: 40, fontWeight: FontWeight.bold), textAlign: TextAlign.center),
     );
   }
