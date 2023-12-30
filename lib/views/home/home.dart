@@ -5,12 +5,14 @@ import 'package:logger/logger.dart';
 import 'package:money/models/account.model.dart';
 import 'package:money/models/movement.model.dart';
 import 'package:money/services/database.service.dart';
-import 'package:money/services/utils.service.dart';
 import 'package:money/views/accounts_list/accounts_list.dialog.dart';
 import 'package:money/views/generics/currency_selector.dart';
 import 'package:money/views/generics/loader.dart';
 import 'package:money/views/generics/navbar.dart';
 import 'package:money/views/generics/tabs.dart' as tabs;
+import 'package:money/views/home/dashboard.dart';
+import 'package:money/views/home/movements_list.dart';
+import 'package:money/views/home/total_viewer.dart';
 import 'package:money/views/new_account/new_account.dialog.dart';
 import 'package:money/views/new_movement/new_movement.dialog.dart';
 
@@ -65,7 +67,7 @@ class _HomeState extends State<Home> {
       return NewMovementDialog(accounts: accounts!, selectedAccount: selectedAccount);
     });
     if (result != null) {
-      tabKeys[selectedTabIndex].currentState?.movementsKey.currentState?.getMovements();
+      getAccounts();
     }
   }
 
@@ -130,7 +132,7 @@ class _HomeState extends State<Home> {
         selectedTabIndex = index;
       }),
       tabs: [
-        tabs.Tab(name: 'Todas las cuentas', body: HomeTab(accounts: accounts!, key: tabKeys[0], openAccountListDialog: openAccountListDialog)),
+        tabs.Tab(name: 'Dashboard', body: const Dashboard()),
         ...accounts!.asMap().map((index, account) =>
             MapEntry(index, tabs.Tab(name: account.name, body: HomeTab(account: account, accounts: accounts!, key: tabKeys[index + 1], openAccountListDialog: openAccountListDialog)))
         ).values
@@ -152,7 +154,7 @@ class HomeTab extends StatefulWidget {
 
 class _HomeTabState extends State<HomeTab> {
   late Currency currency;
-  var movementsKey = GlobalKey<_MovementsListState>();
+  var movementsKey = GlobalKey<MovementsListState>();
 
   @override
   void initState() {
@@ -194,180 +196,6 @@ class _HomeTabState extends State<HomeTab> {
         padding: EdgeInsets.zero,
         onPressed: widget.openAccountListDialog,
         child: const Text('Editar cuentas'),
-      ),
-    );
-  }
-}
-
-class TotalViewer extends StatelessWidget {
-  final Account? account;
-  final List<Account> accounts;
-  final Currency currency;
-
-  const TotalViewer({ super.key, this.account, required this.accounts, required this.currency });
-
-  String totalString() {
-    var utilsService = GetIt.instance.get<UtilsService>();
-    double total = 0;
-    if (account != null) {
-      total = utilsService.convertCurrencies(account!.total, account!.currency, currency);
-    } else {
-      total = 0;
-      for (var account in accounts) {
-        total += utilsService.convertCurrencies(account.total, account.currency, currency);
-      }
-    }
-    return GetIt.instance.get<UtilsService>().beautifyCurrency(total, currency);
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      alignment: Alignment.center,
-      height: 140,
-      child: Text(totalString(), style: const TextStyle(fontSize: 40, fontWeight: FontWeight.bold), textAlign: TextAlign.center),
-    );
-  }
-}
-
-class MovementsList extends StatefulWidget {
-  final Account? account;
-  final Currency currency;
-
-  const MovementsList({ super.key, required this.currency, this.account });
-
-  @override
-  State<MovementsList> createState() => _MovementsListState();
-}
-
-class _MovementsListState extends State<MovementsList> {
-  List<Movement>? movements;
-  int page = 0;
-  int itemsPerPage = 10;
-  var databaseService = GetIt.instance.get<DatabaseService>();
-
-  @override
-  void initState() {
-    super.initState();
-    getMovements();
-  }
-
-  @override
-  didUpdateWidget(MovementsList oldWidget) {
-    super.didUpdateWidget(oldWidget);
-    if (movements == null || widget.account?.name != oldWidget.account?.name) {
-      getMovements();
-    }
-  }
-
-  Future<void> getMovements() async {
-    await databaseService.initialized;
-    try {
-      var movements = await databaseService.movementsRepository.getLastMovements(widget.account, page, itemsPerPage);
-      setState(() {
-        this.movements = movements;
-      });
-    } catch (error, stackTrace) {
-      GetIt.instance.get<Logger>().e('Error getting movements', error: error, stackTrace: stackTrace);
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return movements == null ? const Loader() :
-      movements!.isEmpty ? buildEmptyMessage(context) :
-      Expanded(
-        child: ListView.separated(
-          shrinkWrap: true,
-          itemCount: movements!.length,
-          scrollDirection: Axis.vertical,
-          itemBuilder: (BuildContext context, int index) => MovementListItem(movement: movements![index], currency: widget.currency, account: widget.account),
-          separatorBuilder: (BuildContext context, int index) => const Divider(),
-        ),
-      );
-  }
-
-  Widget buildEmptyMessage(BuildContext context) {
-    return const Text('No se encontaron movimientos');
-  }
-}
-
-class MovementListItem extends StatelessWidget {
-  final Movement movement;
-  final Currency currency;
-  final Account? account;
-
-  const MovementListItem({ super.key, required this.movement, required this.currency, this.account });
-
-  Color getMovementTypeColor(MovementType movementType) {
-    if (movementType == MovementType.ADD) {
-      return Colors.green.shade900;
-    } else if (movementType == MovementType.REMOVE) {
-      return Colors.red.shade900;
-    } else if (movementType == MovementType.TRANSFER) {
-      if (account == null) {
-        return Colors.yellow.shade900;
-      } else {
-        if (movement.source != null && movement.source!.id == account!.id) {
-          return Colors.red.shade900;
-        }
-        if (movement.target != null && movement.target!.id == account!.id) {
-          return Colors.green.shade900;
-        }
-        return Colors.yellow.shade900;
-      }
-    } else {
-      return Colors.black;
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 15),
-      padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 5),
-      child: Column(
-        children: [
-          Row(
-            children: [
-              Expanded(
-                child: Text(movement.description, overflow: TextOverflow.ellipsis, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
-              ),
-              const SizedBox(width: 20),
-              Text(
-                GetIt.instance.get<UtilsService>().beautifyCurrency(movement.amount, currency),
-                overflow: TextOverflow.visible,
-                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: getMovementTypeColor(movement.type))
-              )
-            ],
-          ),
-          const SizedBox(height: 5),
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(movement.category),
-              Column(
-                mainAxisAlignment: MainAxisAlignment.end,
-                crossAxisAlignment: CrossAxisAlignment.end,
-                children: [
-                  movement.source != null ? Row(
-                    children: [
-                      Text(movement.source!.name, overflow: TextOverflow.ellipsis),
-                      Icon(CupertinoIcons.arrow_down_right, size: 18, color: Colors.red.shade900),
-                    ],
-                  ) : Container(),
-                  movement.target != null ? Row(
-                    children: [
-                      Text(movement.target!.name, overflow: TextOverflow.ellipsis),
-                      Icon(CupertinoIcons.arrow_up_right, size: 18, color: Colors.green.shade900),
-                    ],
-                  ) : Container(),
-                ],
-              ),
-            ],
-          ),
-        ],
       ),
     );
   }

@@ -14,6 +14,7 @@ class MovementsRepository extends BaseRepository<Movement> {
     DatabaseColumnDefinition('type', DatabaseColumnType.TEXT),
     DatabaseColumnDefinition('description', DatabaseColumnType.TEXT),
     DatabaseColumnDefinition('amount', DatabaseColumnType.REAL),
+    DatabaseColumnDefinition('conversionRate', DatabaseColumnType.REAL, nullable: true),
     DatabaseColumnDefinition('category', DatabaseColumnType.TEXT),
     DatabaseColumnDefinition('sourceId', DatabaseColumnType.INTEGER, foreignKey: ForeignKeyDefinition('accounts')),
     DatabaseColumnDefinition('targetId', DatabaseColumnType.INTEGER, foreignKey: ForeignKeyDefinition('accounts')),
@@ -36,6 +37,7 @@ class MovementsRepository extends BaseRepository<Movement> {
     map['category'] = model.category;
     map['sourceId'] = model.source?.id;
     map['targetId'] = model.target?.id;
+    map['conversionRate'] = model.conversionRate;
     return map;
   }
 
@@ -60,6 +62,7 @@ class MovementsRepository extends BaseRepository<Movement> {
       source: source,
       target: target,
       creationDate: DateTime.tryParse(map['creationDate'] as String),
+      conversionRate: map['conversionRate'] as double?,
     );
   }
 
@@ -97,7 +100,7 @@ class MovementsRepository extends BaseRepository<Movement> {
           map[columnName.substring(9)] = result[columnName];
         }
       }
-      if (map['sourceId'] != null && map['source_id'] != null) {
+      if (map['sourceId'] != null && result['source_id'] != null) {
         Map<String, Object?> sourceMap = {};
         for (var columnName in result.keys) {
           if (columnName.startsWith('source_')) {
@@ -106,7 +109,7 @@ class MovementsRepository extends BaseRepository<Movement> {
         }
         map['source'] = sourceMap;
       }
-      if (map['targetId'] != null && map['target_id'] != null) {
+      if (map['targetId'] != null && result['target_id'] != null) {
         Map<String, Object?> targetMap = {};
         for (var columnName in result.keys) {
           if (columnName.startsWith('target_')) {
@@ -129,5 +132,29 @@ class MovementsRepository extends BaseRepository<Movement> {
       args: account != null ? [account.id, account.id] : [],
       orderBy: 'creationDate DESC'
     );
+  }
+
+  Future<Movement> create(MovementType movementType, String description, double amount, double conversionRate, String category, Account source, Account target) async {
+    var movement = Movement(
+      movementType,
+      description,
+      amount,
+      category,
+      source: movementType == MovementType.REMOVE || movementType == MovementType.TRANSFER ? source : null,
+      target: movementType == MovementType.ADD || movementType == MovementType.TRANSFER ? target : null,
+      conversionRate: movementType == MovementType.TRANSFER && source.currency != target.currency ? conversionRate : null,
+    );
+    movement = await insert(movement);
+    var databaseService = GetIt.instance.get<DatabaseService>();
+    if (movement.source != null) {
+      await databaseService.accountsRepository.updateBalance(movement.source!.id!, -amount);
+    }
+    if (movement.target != null && movement.conversionRate == null) {
+      await databaseService.accountsRepository.updateBalance(movement.target!.id!, amount);
+    }
+    if (movement.target != null && movement.conversionRate != null) {
+      await databaseService.accountsRepository.updateBalance(movement.target!.id!, amount * movement.conversionRate!);
+    }
+    return movement;
   }
 }

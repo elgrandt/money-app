@@ -16,6 +16,6 @@ class Account extends BaseModel {
 
   @override
   String toString() {
-    return '$name (id=$id)';
+    return '$name $total (id=$id)';
   }
 }

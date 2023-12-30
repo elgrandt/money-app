@@ -34,4 +34,14 @@ class AccountsRepository extends BaseRepository<Account> {
       id: map['id'] as int?
     );
   }
+
+  Future<void> updateBalance(int id, double amount) async {
+    var account = await findById(id);
+    if (account != null) {
+      account.total += amount;
+      await update(account);
+    } else {
+      throw Exception('Account not found');
+    }
+  }
 }

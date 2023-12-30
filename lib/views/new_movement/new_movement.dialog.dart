@@ -36,13 +36,16 @@ class _NewMovementDialogState extends State<NewMovementDialog> {
   final _formKey = GlobalKey<FormState>();
   MovementType movementType = MovementType.REMOVE;
   double amount = 0;
+  double conversionRate = 1;
   String category = 'Otro';
   late Account source;
   late Account target;
 
   final amountInputController = MoneyMaskedTextController(decimalSeparator: '', thousandSeparator: '.', precision: 0);
+  final conversionRateInputController = MoneyMaskedTextController(decimalSeparator: ',', thousandSeparator: '.', precision: 2, initialValue: 1);
   final descriptionInputController = TextEditingController();
   var databaseService = GetIt.instance.get<DatabaseService>();
+  var utilsService = GetIt.instance.get<UtilsService>();
 
   get canSubmit {
     return _formKey.currentState != null && _formKey.currentState!.validate();
@@ -61,16 +64,16 @@ class _NewMovementDialogState extends State<NewMovementDialog> {
   }
 
   Future<void> submit() async {
-    var movement = Movement(
+    await databaseService.initialized;
+    var result = await databaseService.movementsRepository.create(
       movementType,
       descriptionInputController.text,
       amount,
+      conversionRate,
       category,
-      source: movementType == MovementType.REMOVE || movementType == MovementType.TRANSFER ? source : null,
-      target: movementType == MovementType.ADD || movementType == MovementType.TRANSFER ? target : null,
+      source,
+      target,
     );
-    await databaseService.initialized;
-    var result = await databaseService.movementsRepository.insert(movement);
     if (!context.mounted) return;
     Navigator.of(context).pop(result);
   }
@@ -102,6 +105,8 @@ class _NewMovementDialogState extends State<NewMovementDialog> {
               if (movementType == MovementType.TRANSFER || movementType == MovementType.ADD)
                 buildTargetSelect(context),
               buildAmountInput(context),
+              if (movementType == MovementType.TRANSFER && source.currency != target.currency)
+                ...buildConversionRateSection(context),
               const SizedBox(height: 10),
               buildDescriptionInput(context),
               const SizedBox(height: 10),
@@ -161,15 +166,15 @@ class _NewMovementDialogState extends State<NewMovementDialog> {
   }
 
   Widget buildAmountInput(BuildContext context) {
-    Currency currency = movementType == MovementType.ADD ? target.currency : movementType == MovementType.REMOVE ? source.currency : movementType == MovementType.TRANSFER ? target.currency : Currency.ARS;
+    Currency currency = movementType == MovementType.ADD ? target.currency : movementType == MovementType.REMOVE ? source.currency : movementType == MovementType.TRANSFER ? source.currency : Currency.ARS;
     return IntrinsicWidth(
       child: TextFormField(
         keyboardType: TextInputType.number,
-        style: const TextStyle(fontSize: 30, fontWeight: FontWeight.bold),
+        style: const TextStyle(fontSize: 30, fontWeight: FontWeight.bold, height: 1),
         controller: amountInputController,
         decoration: InputDecoration(
           border: InputBorder.none,
-          suffix: Text(GetIt.instance.get<UtilsService>().getCurrencySymbol(currency), style: const TextStyle(fontSize: 30, fontWeight: FontWeight.bold, color: Colors.black)),
+          suffix: Text(utilsService.getCurrencySymbol(currency), style: const TextStyle(fontSize: 30, fontWeight: FontWeight.bold, color: Colors.black)),
           errorStyle: const TextStyle(height: 0, fontSize: 0),
         ),
         validator: (value) {
@@ -180,7 +185,7 @@ class _NewMovementDialogState extends State<NewMovementDialog> {
         },
         onChanged: (value) {
           setState(() {
-            value = value.replaceAll('.', '');
+              value = value.replaceAll('.', '');
             value = value.replaceAll(' ', '');
             if (double.tryParse(value) != null) {
               amount = double.tryParse(value)!;
@@ -189,6 +194,45 @@ class _NewMovementDialogState extends State<NewMovementDialog> {
         },
       ),
     );
+  }
+
+  List<Widget> buildConversionRateSection(BuildContext context) {
+    return [
+      Text('Recibís ${utilsService.beautifyCurrency(amount * conversionRate, target.currency)}'),
+      IntrinsicWidth(
+        child: TextFormField(
+          keyboardType: TextInputType.number,
+          style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, height: 1),
+          controller: conversionRateInputController,
+          decoration: const InputDecoration(
+            border: InputBorder.none,
+            prefix: Text('Tasa de conversión ', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.black)),
+            suffix: Text('x', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.black)),
+            errorStyle: TextStyle(height: 0, fontSize: 0),
+          ),
+          validator: (value) {
+            if (value == null) return '';
+            value = value.replaceAll(',', '');
+            value = value.replaceAll('.', '');
+            value = value.replaceAll(' ', '');
+            if (value.isEmpty || double.tryParse(value) == null || double.tryParse(value) == 0) {
+              return '';
+            }
+            return null;
+          },
+          onChanged: (value) {
+            setState(() {
+              value = value.replaceAll(',', '');
+              value = value.replaceAll('.', '');
+              value = value.replaceAll(' ', '');
+              if (double.tryParse(value) != null) {
+                conversionRate = double.tryParse(value)! / 100;
+              }
+            });
+          },
+        ),
+      )
+    ];
   }
 
   Widget buildDescriptionInput(BuildContext context) {

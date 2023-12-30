@@ -40,6 +40,8 @@ class _NewAccountDialogState extends State<NewAccountDialog> {
       alignment: Alignment.center,
       child: Form(
         key: _formKey,
+        onChanged: () => setState(() { }),
+        autovalidateMode: AutovalidateMode.onUserInteraction,
         child: SingleChildScrollView(
           padding: const EdgeInsets.symmetric(vertical: 25, horizontal: 25),
           child: Column(
@@ -72,6 +74,12 @@ class _NewAccountDialogState extends State<NewAccountDialog> {
         floatingLabelAlignment: FloatingLabelAlignment.center,
         contentPadding: EdgeInsets.symmetric(horizontal: 15, vertical: 0),
       ),
+      validator: (value) {
+        if (value == null || value.isEmpty) {
+          return 'Por favor ingrese un nombre';
+        }
+        return null;
+      },
       controller: nameInputController,
     );
   }

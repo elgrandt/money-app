@@ -33,7 +33,7 @@ class _AccountsListDialogState extends State<AccountsListDialog> {
     return Dialog(
       alignment: Alignment.center,
       child: Padding(
-        padding: const EdgeInsets.symmetric(vertical: 25, horizontal: 25),
+        padding: const EdgeInsets.symmetric(vertical: 25, horizontal: 0),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
@@ -41,6 +41,7 @@ class _AccountsListDialogState extends State<AccountsListDialog> {
             const SizedBox(height: 20),
             ListView.separated(
               shrinkWrap: true,
+              padding: const EdgeInsets.symmetric(horizontal: 25),
               itemBuilder: (context, index) => buildAccountItem(context, widget.accounts[index]),
               separatorBuilder: (context, index) => const Divider(),
               itemCount: widget.accounts.length
@@ -63,14 +64,15 @@ class _AccountsListDialogState extends State<AccountsListDialog> {
         Expanded(
           child: Text(account.name, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
         ),
-        IconButton(
-          icon: Icon(Icons.delete, color: Colors.red.shade900),
-          onPressed: () {
-            databaseService.accountsRepository.delete(account.id!);
-            if (!context.mounted) return;
-            Navigator.of(context).pop(account);
-          },
-        ),
+        if (widget.accounts.length > 1)
+          IconButton(
+            icon: Icon(Icons.delete, color: Colors.red.shade900),
+            onPressed: () {
+              databaseService.accountsRepository.delete(account.id!);
+              if (!context.mounted) return;
+              Navigator.of(context).pop(account);
+            },
+          ),
       ],
     );
   }

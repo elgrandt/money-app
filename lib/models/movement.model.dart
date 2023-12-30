@@ -12,15 +12,16 @@ class Movement extends BaseModel {
   MovementType type;
   String description;
   double amount;
+  double? conversionRate;
   String category;
   Account? source;
   Account? target;
   DateTime? creationDate;
 
-  Movement(this.type, this.description, this.amount, this.category, { super.id, this.source, this.target, this.creationDate });
+  Movement(this.type, this.description, this.amount, this.category, { super.id, this.source, this.target, this.creationDate, this.conversionRate });
 
   @override
   String toString() {
-    return '${type.name} $amount (from: ${source?.name ?? '-'}) (to: ${target?.name ?? '-'})';
+    return '$creationDate: ${type.name} $amount (from: ${source?.name ?? '-'}) (to: ${target?.name ?? '-'})';
   }
 }

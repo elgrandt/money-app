@@ -1,6 +1,5 @@
 
 import 'package:flutter/material.dart';
-import 'package:flutter/widgets.dart';
 
 class Tab {
   String name;
@@ -21,6 +20,7 @@ class Tabs extends StatefulWidget {
 
 class _TabsState extends State<Tabs> {
   Tab? selectedTab;
+  GlobalKey<_TabSelectorState> tabSelectorKey = GlobalKey();
 
   @override
   void initState() {
@@ -31,10 +31,24 @@ class _TabsState extends State<Tabs> {
   }
 
   @override
+  void didUpdateWidget(covariant Tabs oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.tabs.length != oldWidget.tabs.length) {
+      if (widget.tabs.isNotEmpty) {
+        tabSelectorKey.currentState?.select(widget.tabs.first, instant: true, callOnTabChange: false);
+        setState(() {
+          selectedTab = widget.tabs.first;
+        });
+      }
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
     return widget.tabs.isNotEmpty ? Column(
       children: [
         TabSelector(
+          key: tabSelectorKey,
           tabs: widget.tabs,
           onTabChange: (tab) => setState(() {
             selectedTab = tab;
@@ -87,6 +101,18 @@ class _TabSelectorState extends State<TabSelector> {
     });
   }
 
+  @override
+  void didUpdateWidget(covariant TabSelector oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.tabs != oldWidget.tabs) {
+      List<GlobalKey> newKeys = [];
+      for (var _ in widget.tabs) {
+        newKeys.add(GlobalKey());
+      }
+      keys = newKeys;
+    }
+  }
+
   bool isSelected(Tab tab) {
     return selected != null ? tab.name == selected!.name : false;
   }
@@ -117,7 +143,7 @@ class _TabSelectorState extends State<TabSelector> {
     }
   }
 
-  void select(Tab tab, { instant = false }) {
+  void select(Tab tab, { bool instant = false, bool callOnTabChange = true }) {
     setState(() {
       selected = tab;
     });
@@ -144,7 +170,7 @@ class _TabSelectorState extends State<TabSelector> {
         }
       }
     }
-    if (widget.onTabChange != null) {
+    if (widget.onTabChange != null && callOnTabChange) {
       widget.onTabChange!(tab);
     }
   }
