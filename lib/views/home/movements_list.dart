@@ -118,7 +118,11 @@ class MovementListItem extends StatelessWidget {
           Row(
             children: [
               Expanded(
-                child: Text(movement.description.isNotEmpty ? movement.description : '<sin descripción>', overflow: TextOverflow.ellipsis, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                child: Text(
+                  movement.category,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)
+                ),
               ),
               const SizedBox(width: 20),
               Text(
@@ -133,7 +137,7 @@ class MovementListItem extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text(movement.category),
+              Text(movement.description.isNotEmpty ? movement.description : ''),
               Column(
                 mainAxisAlignment: MainAxisAlignment.end,
                 crossAxisAlignment: CrossAxisAlignment.end,

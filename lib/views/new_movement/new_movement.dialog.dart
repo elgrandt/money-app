@@ -2,12 +2,14 @@
 import 'package:flutter/material.dart';
 import 'package:get_it/get_it.dart';
 import 'package:money/models/account.model.dart';
+import 'package:money/models/category.model.dart';
 import 'package:money/models/movement.model.dart';
 import 'package:money/services/database.service.dart';
 import 'package:money/services/utils.service.dart';
 import 'package:money/views/generics/button_selector.dart';
 import 'package:money/views/generics/cupertino_select.dart';
 import 'package:flutter_masked_text2/flutter_masked_text2.dart';
+import 'package:money/views/new_category/new_category.dialog.dart';
 
 
 class NewMovementDialog extends StatefulWidget {
@@ -27,17 +29,17 @@ class _NewMovementDialogState extends State<NewMovementDialog> {
     MovementType.TRANSFER: 'Transferencia',
   };
 
-  Map<MovementType, List<String>>? categoriesByType = {
-    MovementType.ADD: ['Sueldo', 'Préstamo', 'Otro'],
-    MovementType.REMOVE: ['Comida', 'Transporte', 'Casa', 'Limpieza', 'Gasto fijo', 'Otro'],
-    MovementType.TRANSFER: ['Movimiento', 'Cambio de moneda', 'Otro'],
+  Map<MovementType, List<Category>> categoriesByType = {
+    MovementType.ADD: [],
+    MovementType.REMOVE: [],
+    MovementType.TRANSFER: [],
   };
 
   final _formKey = GlobalKey<FormState>();
   MovementType movementType = MovementType.REMOVE;
   double amount = 0;
   double conversionRate = 1;
-  String category = 'Otro';
+  String selectedCategory = 'Otro';
   late Account source;
   late Account target;
 
@@ -61,6 +63,7 @@ class _NewMovementDialogState extends State<NewMovementDialog> {
       source = widget.accounts.first;
       target = widget.accounts.first;
     }
+    getCategories();
   }
 
   Future<void> submit() async {
@@ -70,7 +73,7 @@ class _NewMovementDialogState extends State<NewMovementDialog> {
       descriptionInputController.text,
       amount,
       conversionRate,
-      category,
+      selectedCategory,
       source,
       target,
     );
@@ -82,7 +85,30 @@ class _NewMovementDialogState extends State<NewMovementDialog> {
     setState(() {
       amountInputController.text = '0';
       descriptionInputController.text = '';
-      category = 'Otro';
+      if (categoriesByType[movementType]!.isNotEmpty) {
+        selectedCategory = categoriesByType[movementType]!.first.name;
+      }
+    });
+    if (categoriesByType[movementType]!.isEmpty) {
+      openNewCategoryDialog();
+    }
+  }
+
+  Future<void> openNewCategoryDialog() async {
+    var result = await showDialog<Category?>(context: context, builder: (context) {
+      return NewCategoryDialog(movementType: movementType);
+    });
+    if (result != null) {
+      getCategories();
+    }
+  }
+
+  void getCategories() {
+    databaseService.categoriesRepository.getCategoriesByType().then((categoriesByType) {
+      setState(() {
+        this.categoriesByType = categoriesByType;
+      });
+      reset();
     });
   }
 
@@ -159,6 +185,9 @@ class _NewMovementDialogState extends State<NewMovementDialog> {
       onSelectedIndexChange: (index) {
         setState(() {
           target = widget.accounts[index];
+          if (categoriesByType[movementType]!.isNotEmpty) {
+            selectedCategory = categoriesByType[movementType]!.first.name;
+          }
         });
         reset();
       },
@@ -169,6 +198,7 @@ class _NewMovementDialogState extends State<NewMovementDialog> {
     Currency currency = movementType == MovementType.ADD ? target.currency : movementType == MovementType.REMOVE ? source.currency : movementType == MovementType.TRANSFER ? source.currency : Currency.ARS;
     return IntrinsicWidth(
       child: TextFormField(
+        autofocus: true,
         keyboardType: TextInputType.number,
         style: const TextStyle(fontSize: 30, fontWeight: FontWeight.bold, height: 1),
         controller: amountInputController,
@@ -250,20 +280,22 @@ class _NewMovementDialogState extends State<NewMovementDialog> {
   }
 
   Widget buildCategorySelector(BuildContext context) {
-    if (categoriesByType == null) return Container();
-    var categories = categoriesByType![movementType]!;
+    var categories = categoriesByType[movementType]!;
     return Column(
       children: [
         const Text('Categoría', textAlign: TextAlign.center, style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
         const SizedBox(height: 10),
         ButtonSelector(
-          options: categories.map((category) => Text(category)).toList(),
-          selectedIndex: categories.indexOf(category),
+          options: categories.map((category) => Text(category.name)).toList(),
+          selectedIndex: categories.indexWhere((category) => category.name == selectedCategory),
           onSelectionChange: (index) {
             setState(() {
-              category = categories[index];
+              selectedCategory = categories[index].name;
             });
           },
+          onAddButtonPressed: () {
+            openNewCategoryDialog();
+          }
         ),
       ],
     );

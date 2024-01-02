@@ -4,6 +4,7 @@ import 'dart:async';
 import 'package:get_it/get_it.dart';
 import 'package:logger/logger.dart';
 import 'package:money/repositories/accounts.repository.dart';
+import 'package:money/repositories/categories.repository.dart';
 import 'package:money/repositories/migrations.repository.dart';
 import 'package:money/repositories/movements.repository.dart';
 import 'package:sqflite/sqflite.dart';
@@ -20,6 +21,7 @@ class DatabaseService {
   late MigrationsRepository migrationsRepository;
   late MovementsRepository movementsRepository;
   late AccountsRepository accountsRepository;
+  late CategoriesRepository categoriesRepository;
   // Add new repositories here
   
   Future<void> get initialized {
@@ -55,6 +57,7 @@ class DatabaseService {
     migrationsRepository = MigrationsRepository(db);
     movementsRepository = MovementsRepository(db);
     accountsRepository = AccountsRepository(db);
+    categoriesRepository = CategoriesRepository(db);
     // Add new repositories here
     if (_autosync) {
       await migrationsRepository.sync();
