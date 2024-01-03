@@ -268,6 +268,7 @@ class _NewMovementDialogState extends State<NewMovementDialog> {
   Widget buildDescriptionInput(BuildContext context) {
     return TextFormField(
       textAlign: TextAlign.center,
+      textCapitalization: TextCapitalization.sentences,
       decoration: const InputDecoration(
         labelText: 'Descripción',
         floatingLabelBehavior: FloatingLabelBehavior.always,

@@ -9,7 +9,6 @@ import 'package:money/services/utils.service.dart';
 import 'package:money/views/accounts_list/accounts_list.dialog.dart';
 import 'package:money/views/generics/currency_selector.dart';
 import 'package:money/views/generics/loader.dart';
-import 'package:money/views/generics/navbar.dart';
 import 'package:money/views/generics/tabs.dart' as tabs;
 import 'package:money/views/home/dashboard.dart';
 import 'package:money/views/home/movements_list.dart';

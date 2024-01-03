@@ -61,6 +61,7 @@ class _NewCategoryDialogState extends State<NewCategoryDialog> {
   Widget buildNameField(BuildContext context) {
     return TextFormField(
       autofocus: true,
+      textCapitalization: TextCapitalization.sentences,
       autovalidateMode: AutovalidateMode.onUserInteraction,
       textAlign: TextAlign.center,
       decoration: const InputDecoration(

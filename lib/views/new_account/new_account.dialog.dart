@@ -67,6 +67,7 @@ class _NewAccountDialogState extends State<NewAccountDialog> {
   Widget buildNameInput(BuildContext context) {
     return TextFormField(
       textAlign: TextAlign.center,
+      textCapitalization: TextCapitalization.sentences,
       decoration: const InputDecoration(
         labelText: 'Nombre de la cuenta',
         floatingLabelBehavior: FloatingLabelBehavior.always,
