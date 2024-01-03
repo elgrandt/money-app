@@ -5,6 +5,7 @@ import 'package:logger/logger.dart';
 import 'package:money/models/account.model.dart';
 import 'package:money/models/movement.model.dart';
 import 'package:money/services/database.service.dart';
+import 'package:money/services/utils.service.dart';
 import 'package:money/views/accounts_list/accounts_list.dialog.dart';
 import 'package:money/views/generics/currency_selector.dart';
 import 'package:money/views/generics/loader.dart';
@@ -37,11 +38,20 @@ class _HomeState extends State<Home> {
   List<Account>? accounts;
   int selectedTabIndex = 0;
   List<GlobalKey<_HomeTabState>> tabKeys = [GlobalKey()];
+  var initializedCurrencies = false;
 
   @override
   void initState() {
     super.initState();
     getAccounts();
+    initializeCurrencies();
+  }
+
+  Future<void> initializeCurrencies() async {
+    await GetIt.instance.get<UtilsService>().updateCurrencyMappings();
+    setState(() {
+      initializedCurrencies = true;
+    });
   }
 
   Future<void> getAccounts() async {
@@ -91,14 +101,18 @@ class _HomeState extends State<Home> {
 
   @override
   Widget build(BuildContext context) {
-    return Navbar(
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('Money'),
+        scrolledUnderElevation: 0,
+      ),
       floatingActionButton: accounts != null && accounts!.isNotEmpty ? FloatingActionButton(
         onPressed: openNewMovementDialog,
         backgroundColor: Theme.of(context).primaryColor,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(100)),
         child: const Icon(Icons.add, color: Colors.white),
       ) : null,
-      body: accounts == null ? const Loader() : accounts!.isEmpty ? buildWelcomePage(context) : buildTabs(context),
+      body: accounts == null || !initializedCurrencies ? const Loader() : accounts!.isEmpty ? buildWelcomePage(context) : buildTabs(context),
     );
   }
 

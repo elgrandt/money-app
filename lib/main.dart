@@ -7,7 +7,9 @@ import 'package:money/services/utils.service.dart';
 import 'package:money/views/home/home.dart';
 
 void main() async {
-  runApp(const MoneyApp());
+  GlobalKey<MoneyAppState> appKey = GlobalKey();
+  runApp(MoneyApp(key: appKey));
+  GetIt.instance.registerSingleton(appKey);
   initializeLogger();
   initializeServices();
   initializeDatabase();
@@ -30,20 +32,33 @@ void initializeServices() {
   GetIt.instance.registerSingleton(DatabaseService());
 }
 
-class MoneyApp extends StatelessWidget {
+class MoneyApp extends StatefulWidget {
   const MoneyApp({super.key});
+
+  @override
+  State<MoneyApp> createState() => MoneyAppState();
+}
+
+class MoneyAppState extends State<MoneyApp> {
+
+  @override
+  void initState() {
+    super.initState();
+  }
+
+  void reRender() {
+    setState(() {});
+  }
 
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Money',
       theme: ThemeData(
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
         useMaterial3: true,
       ),
-      routes: {
-        '/': (context) => const Home(),
-      },
+      // ignore: prefer_const_constructors
+      home: Home(),
     );
   }
 }

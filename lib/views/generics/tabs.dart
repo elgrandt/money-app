@@ -21,6 +21,8 @@ class Tabs extends StatefulWidget {
 class _TabsState extends State<Tabs> {
   Tab? selectedTab;
   GlobalKey<_TabSelectorState> tabSelectorKey = GlobalKey();
+  Offset? dragStart;
+  Offset? dragEnd;
 
   @override
   void initState() {
@@ -58,8 +60,26 @@ class _TabsState extends State<Tabs> {
           }),
         ),
         Expanded(
-          child: Container(
-            child: getSelectedTabWidget(),
+          child: GestureDetector(
+            onHorizontalDragStart: (details) {
+              dragStart = details.globalPosition;
+            },
+            onHorizontalDragUpdate: (details) {
+              dragEnd = details.globalPosition;
+            },
+            onHorizontalDragEnd: (details) {
+              if (dragStart != null && dragEnd != null) {
+                var dx = dragEnd!.dx - dragStart!.dx;
+                if (dx.abs() > 5) {
+                if (dx > 0) {
+                  tabSelectorKey.currentState?.previousTab();
+                } else if (dx < 0) {
+                  tabSelectorKey.currentState?.nextTab();
+                }
+                }
+              }
+            },
+            child: getSelectedTabWidget()
           )
         ),
       ],

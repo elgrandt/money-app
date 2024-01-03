@@ -2,7 +2,9 @@
 import 'dart:convert';
 
 import 'package:flutter/widgets.dart';
+import 'package:get_it/get_it.dart';
 import 'package:intl/intl.dart';
+import 'package:logger/logger.dart';
 import 'package:money/models/account.model.dart';
 import 'package:http/http.dart' as http;
 
@@ -12,6 +14,11 @@ class CurrencyMapping {
   double multiplier;
 
   CurrencyMapping({ required this.from, required this.to, required this.multiplier });
+
+  @override
+  String toString() {
+    return '${from.name} -> ${to.name}: ${multiplier.toStringAsFixed(2)}';
+  }
 }
 
 class CurrencyConfig {
@@ -33,6 +40,7 @@ class UtilsService {
     CurrencyMapping(from: Currency.EUR, to: Currency.USD, multiplier: 1),
   ];
   var lastCurrencyMappingUpdate = DateTime.fromMillisecondsSinceEpoch(0);
+  var logger = GetIt.instance.get<Logger>();
 
   static List<CurrencyConfig> currencyConfigs = [
     CurrencyConfig(currency: Currency.ARS, name: 'ARS', icon: Image.asset('icons/currency/ars.png', package: 'currency_icons', width: 24), symbol: '\$'),
@@ -42,10 +50,12 @@ class UtilsService {
 
   UtilsService();
 
-  void _updateCurrencyMappings() async {
+  Future<void> updateCurrencyMappings() async {
     // Update currency mappings every hour
     var diff = DateTime.now().millisecondsSinceEpoch - lastCurrencyMappingUpdate.millisecondsSinceEpoch;
     if (diff < 1000 * 60 * 60) return; // 1 hour
+    logger.d('Updating currency mappings');
+    lastCurrencyMappingUpdate = DateTime.now();
     // Get currency mappings from API
     var url = Uri.parse('https://api.bluelytics.com.ar/v2/latest');
     var response = await http.get(url);
@@ -66,7 +76,7 @@ class UtilsService {
   }
 
   double convertCurrencies(double amount, Currency from, Currency to) {
-    _updateCurrencyMappings();
+    updateCurrencyMappings();
     if (from == to) return amount;
     for (var mapping in currencyMappings) {
       if (mapping.from == from && mapping.to == to) {
