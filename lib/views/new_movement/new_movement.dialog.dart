@@ -43,7 +43,7 @@ class _NewMovementDialogState extends State<NewMovementDialog> {
   late Account source;
   late Account target;
 
-  final amountInputController = MoneyMaskedTextController(decimalSeparator: '', thousandSeparator: '.', precision: 0);
+  final amountInputController = MoneyMaskedTextController(decimalSeparator: ',', thousandSeparator: '.', precision: 2, initialValue: 1);
   final conversionRateInputController = MoneyMaskedTextController(decimalSeparator: ',', thousandSeparator: '.', precision: 2, initialValue: 1);
   final descriptionInputController = TextEditingController();
   var databaseService = GetIt.instance.get<DatabaseService>();
@@ -83,7 +83,7 @@ class _NewMovementDialogState extends State<NewMovementDialog> {
 
   void reset() {
     setState(() {
-      amountInputController.text = '0';
+      amountInputController.text = '0,00';
       descriptionInputController.text = '';
       if (categoriesByType[movementType]!.isNotEmpty) {
         selectedCategory = categoriesByType[movementType]!.first.name;
@@ -208,17 +208,22 @@ class _NewMovementDialogState extends State<NewMovementDialog> {
           errorStyle: const TextStyle(height: 0, fontSize: 0),
         ),
         validator: (value) {
-          if (value == null || value.isEmpty || double.tryParse(value) == null || double.tryParse(value) == 0) {
+          if (value == null) return '';
+          value = value.replaceAll('.', '');
+          value = value.replaceAll(',', '');
+          value = value.replaceAll(' ', '');
+          if (value.isEmpty || double.tryParse(value) == null || double.tryParse(value) == 0) {
             return '';
           }
           return null;
         },
         onChanged: (value) {
           setState(() {
-              value = value.replaceAll('.', '');
+            value = value.replaceAll('.', '');
+            value = value.replaceAll(',', '');
             value = value.replaceAll(' ', '');
             if (double.tryParse(value) != null) {
-              amount = double.tryParse(value)!;
+              amount = double.tryParse(value)! / 100;
             }
           });
         },
