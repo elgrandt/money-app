@@ -44,6 +44,7 @@ dependencies:
   flutter_masked_text2: ^0.9.1
   http: ^1.1.2
   fl_chart: ^0.66.0
+  events_emitter: ^0.5.2
 
 dev_dependencies:
   flutter_test:

@@ -31,7 +31,7 @@ class _NewAccountDialogState extends State<NewAccountDialog> {
     await databaseService.initialized;
     var result = await databaseService.accountsRepository.insert(account);
     if (!context.mounted) return;
-    Navigator.of(context).pop(result);
+    Navigator.of(context).pop(true);
   }
 
   @override

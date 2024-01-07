@@ -1,14 +1,14 @@
 
 import 'package:flutter/material.dart';
 import 'package:get_it/get_it.dart';
+import 'package:logger/logger.dart';
 import 'package:money/models/account.model.dart';
 import 'package:money/services/database.service.dart';
+import 'package:money/views/generics/loader.dart';
 import 'package:money/views/new_account/new_account.dialog.dart';
 
 class AccountsListDialog extends StatefulWidget {
-  final List<Account> accounts;
-
-  const AccountsListDialog({ super.key, required this.accounts });
+  const AccountsListDialog({ super.key });
 
   @override
   State<AccountsListDialog> createState() => _AccountsListDialogState();
@@ -16,15 +16,36 @@ class AccountsListDialog extends StatefulWidget {
 
 class _AccountsListDialogState extends State<AccountsListDialog> {
 
+  List<Account>? accounts;
   var databaseService = GetIt.instance.get<DatabaseService>();
+  var logger = GetIt.instance.get<Logger>();
+
+  @override
+  void initState() {
+    super.initState();
+    getAccounts();
+  }
+
+  Future<void> getAccounts() async {
+    await databaseService.initialized;
+    try {
+      logger.d('Getting accounts');
+      var accounts = await databaseService.accountsRepository.find();
+      setState(() {
+        this.accounts = accounts;
+      });
+    } catch (error, stackTrace) {
+      logger.e('Error getting accounts', error: error, stackTrace: stackTrace);
+    }
+  }
 
   Future<void> openNewAccountDialog() async {
-    var result = await showDialog<Account?>(context: context, builder: (context) {
+    var result = await showDialog<bool?>(context: context, builder: (context) {
       return const NewAccountDialog();
     });
     if (result != null) {
       if (!context.mounted) return;
-      Navigator.of(context).pop(result);
+      Navigator.of(context).pop(true);
     }
   }
 
@@ -39,13 +60,16 @@ class _AccountsListDialogState extends State<AccountsListDialog> {
           children: [
             buildTitle(context),
             const SizedBox(height: 20),
-            ListView.separated(
-              shrinkWrap: true,
-              padding: const EdgeInsets.symmetric(horizontal: 25),
-              itemBuilder: (context, index) => buildAccountItem(context, widget.accounts[index]),
-              separatorBuilder: (context, index) => const Divider(),
-              itemCount: widget.accounts.length
-            ),
+            if (accounts == null)
+              const Loader(),
+            if (accounts != null)
+              ListView.separated(
+                shrinkWrap: true,
+                padding: const EdgeInsets.symmetric(horizontal: 25),
+                itemBuilder: (context, index) => buildAccountItem(context, accounts![index]),
+                separatorBuilder: (context, index) => const Divider(),
+                itemCount: accounts!.length
+              ),
             const SizedBox(height: 20),
             buildActionButtons(context),
           ],
@@ -64,13 +88,13 @@ class _AccountsListDialogState extends State<AccountsListDialog> {
         Expanded(
           child: Text(account.name, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
         ),
-        if (widget.accounts.length > 1)
+        if (accounts!.length > 1)
           IconButton(
             icon: Icon(Icons.delete, color: Colors.red.shade900),
             onPressed: () {
               databaseService.accountsRepository.delete(account.id!);
               if (!context.mounted) return;
-              Navigator.of(context).pop(account);
+              Navigator.of(context).pop(true);
             },
           ),
       ],

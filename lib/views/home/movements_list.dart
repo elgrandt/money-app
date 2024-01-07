@@ -66,7 +66,7 @@ class MovementsListState extends State<MovementsList> {
   }
 
   Widget buildEmptyMessage(BuildContext context) {
-    return const Text('No se encontaron movimientos');
+    return const Expanded(child: Text('No se encontraron movimientos'));
   }
 }
 

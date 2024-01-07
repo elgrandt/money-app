@@ -1,9 +1,11 @@
 
+import 'package:events_emitter/events_emitter.dart';
 import 'package:flutter/material.dart';
 import 'package:get_it/get_it.dart';
 import 'package:money/models/account.model.dart';
 import 'package:money/models/category.model.dart';
 import 'package:money/models/movement.model.dart';
+import 'package:money/repositories/base.repository.dart';
 import 'package:money/services/database.service.dart';
 import 'package:money/services/utils.service.dart';
 import 'package:money/views/generics/button_selector.dart';
@@ -39,18 +41,20 @@ class _NewMovementDialogState extends State<NewMovementDialog> {
   MovementType movementType = MovementType.REMOVE;
   double amount = 0;
   double conversionRate = 1;
-  String selectedCategory = 'Otro';
+  String? selectedCategory;
   late Account source;
   late Account target;
 
-  final amountInputController = MoneyMaskedTextController(decimalSeparator: ',', thousandSeparator: '.', precision: 2, initialValue: 1);
+  final amountInputController = MoneyMaskedTextController(decimalSeparator: ',', thousandSeparator: '.', precision: 2, initialValue: 0);
   final conversionRateInputController = MoneyMaskedTextController(decimalSeparator: ',', thousandSeparator: '.', precision: 2, initialValue: 1);
   final descriptionInputController = TextEditingController();
   var databaseService = GetIt.instance.get<DatabaseService>();
   var utilsService = GetIt.instance.get<UtilsService>();
 
+  EventListener<TableUpdateEvent<Category>>? categoriesListener;
+
   get canSubmit {
-    return _formKey.currentState != null && _formKey.currentState!.validate();
+    return _formKey.currentState != null && _formKey.currentState!.validate() && selectedCategory != null;
   }
 
   @override
@@ -64,6 +68,13 @@ class _NewMovementDialogState extends State<NewMovementDialog> {
       target = widget.accounts.first;
     }
     getCategories();
+    watchCategories();
+  }
+
+  @override
+  void dispose() {
+    super.dispose();
+    categoriesListener?.cancel();
   }
 
   Future<void> submit() async {
@@ -73,7 +84,7 @@ class _NewMovementDialogState extends State<NewMovementDialog> {
       descriptionInputController.text,
       amount,
       conversionRate,
-      selectedCategory,
+      selectedCategory!,
       source,
       target,
     );
@@ -81,34 +92,28 @@ class _NewMovementDialogState extends State<NewMovementDialog> {
     Navigator.of(context).pop(result);
   }
 
-  void reset() {
-    setState(() {
-      amountInputController.text = '0,00';
-      descriptionInputController.text = '';
-      if (categoriesByType[movementType]!.isNotEmpty) {
-        selectedCategory = categoriesByType[movementType]!.first.name;
-      }
-    });
-    if (categoriesByType[movementType]!.isEmpty) {
-      openNewCategoryDialog();
-    }
-  }
-
   Future<void> openNewCategoryDialog() async {
-    var result = await showDialog<Category?>(context: context, builder: (context) {
+    await showDialog<Category?>(context: context, builder: (context) {
       return NewCategoryDialog(movementType: movementType);
     });
-    if (result != null) {
-      getCategories();
-    }
   }
 
-  void getCategories() {
+  void getCategories({ String? selected }) {
     databaseService.categoriesRepository.getCategoriesByType().then((categoriesByType) {
       setState(() {
         this.categoriesByType = categoriesByType;
+        selectedCategory = selected;
       });
-      reset();
+    });
+  }
+
+  void watchCategories() {
+    categoriesListener = databaseService.categoriesRepository.events.on<TableUpdateEvent<Category>>('change', (event) {
+      if (event.type == TableUpdateEventType.INSERT) {
+        getCategories(selected: event.model!.name);
+      } else {
+        getCategories();
+      }
     });
   }
 
@@ -157,8 +162,8 @@ class _NewMovementDialogState extends State<NewMovementDialog> {
       onSelectionChange: (index) {
         setState(() {
           movementType = MovementType.values[index];
+          selectedCategory = null;
         });
-        reset();
       },
     );
   }
@@ -172,7 +177,6 @@ class _NewMovementDialogState extends State<NewMovementDialog> {
         setState(() {
           source = widget.accounts[index];
         });
-        reset();
       },
     );
   }
@@ -189,7 +193,6 @@ class _NewMovementDialogState extends State<NewMovementDialog> {
             selectedCategory = categoriesByType[movementType]!.first.name;
           }
         });
-        reset();
       },
     );
   }

@@ -3,6 +3,7 @@ import 'package:get_it/get_it.dart';
 import 'package:logger/logger.dart';
 import 'package:sqflite/sqflite.dart';
 import '../models/base.model.dart';
+import 'package:events_emitter/events_emitter.dart';
 
 enum DatabaseColumnType {
   NULL,
@@ -121,10 +122,42 @@ class DatabaseColumnDefinition {
   }
 }
 
+enum TableUpdateEventType {
+  INSERT,
+  UPDATE,
+  DELETE
+}
+
+class TableUpdateEvent<Model extends BaseModel> {
+  TableUpdateEventType type;
+  int id;
+  Model? model;
+
+  TableUpdateEvent(this.type, this.id, { this.model });
+
+  @override
+  String toString() {
+    return '${type.name} (id = $id)';
+  }
+}
+
+class InsertEvent<Model extends BaseModel> extends TableUpdateEvent<Model> {
+  InsertEvent(int id, Model model): super(TableUpdateEventType.INSERT, id, model: model);
+}
+
+class UpdateEvent<Model extends BaseModel> extends TableUpdateEvent<Model> {
+  UpdateEvent(int id, Model model): super(TableUpdateEventType.UPDATE, id, model: model);
+}
+
+class DeleteEvent<Model extends BaseModel> extends TableUpdateEvent<Model> {
+  DeleteEvent(int id): super(TableUpdateEventType.DELETE, id);
+}
+
 abstract class BaseRepository<Model extends BaseModel> {
   Database db;
   String tableName;
   List<DatabaseColumnDefinition> columnDefinitions;
+  EventEmitter events = EventEmitter();
 
   BaseRepository(this.db, this.tableName, this.columnDefinitions);
 
@@ -136,6 +169,7 @@ abstract class BaseRepository<Model extends BaseModel> {
 
   Future<Model> insert(Model model) async {
     model.id = await db.insert(tableName, modelToMap(model));
+    events.emit('change', InsertEvent(model.id!, model));
     return model;
   }
 
@@ -166,11 +200,15 @@ abstract class BaseRepository<Model extends BaseModel> {
   }
 
   Future<int> delete(int id) async {
-    return await db.delete(tableName, where: 'id = ?', whereArgs: [id]);
+    var result = await db.delete(tableName, where: 'id = ?', whereArgs: [id]);
+    events.emit('change', DeleteEvent<Model>(id));
+    return result;
   }
 
   Future<int> update(Model model) async {
-    return await db.update(tableName, modelToMap(model), where: 'id = ?', whereArgs: [model.id]);
+    var result = await db.update(tableName, modelToMap(model), where: 'id = ?', whereArgs: [model.id]);
+    events.emit('change', UpdateEvent(model.id!, model));
+    return result;
   }
 
   Map<String, Object?> modelToMap(Model model);

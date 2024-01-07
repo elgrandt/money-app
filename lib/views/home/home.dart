@@ -1,14 +1,17 @@
+import 'package:events_emitter/events_emitter.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:get_it/get_it.dart';
 import 'package:logger/logger.dart';
 import 'package:money/models/account.model.dart';
 import 'package:money/models/movement.model.dart';
+import 'package:money/repositories/base.repository.dart';
 import 'package:money/services/database.service.dart';
 import 'package:money/services/utils.service.dart';
 import 'package:money/views/accounts_list/accounts_list.dialog.dart';
 import 'package:money/views/generics/currency_selector.dart';
 import 'package:money/views/generics/loader.dart';
+import 'package:money/views/generics/navbar.dart';
 import 'package:money/views/generics/tabs.dart' as tabs;
 import 'package:money/views/home/dashboard.dart';
 import 'package:money/views/home/movements_list.dart';
@@ -38,12 +41,20 @@ class _HomeState extends State<Home> {
   int selectedTabIndex = 0;
   List<GlobalKey<_HomeTabState>> tabKeys = [GlobalKey()];
   var initializedCurrencies = false;
+  EventListener<TableUpdateEvent<Account>>? accountsListener;
 
   @override
   void initState() {
     super.initState();
     getAccounts();
     initializeCurrencies();
+    watchAccountChanges();
+  }
+
+  @override
+  void dispose() {
+    super.dispose();
+    accountsListener?.cancel();
   }
 
   Future<void> initializeCurrencies() async {
@@ -67,44 +78,33 @@ class _HomeState extends State<Home> {
     }
   }
 
+  Future<void> watchAccountChanges() async {
+    await databaseService.initialized;
+    accountsListener = databaseService.accountsRepository.events.on<TableUpdateEvent<Account>>('change', (event) {
+      logger.d('Account change: $event');
+      getAccounts();
+    });
+  }
+
   Future<void> openNewMovementDialog() async {
     Account? selectedAccount;
     if (selectedTabIndex > 0 && accounts != null) {
       selectedAccount = accounts![selectedTabIndex - 1];
     }
-    var result = await showDialog<Movement?>(context: context, builder: (context) {
+    await showDialog<Movement?>(context: context, builder: (context) {
       return NewMovementDialog(accounts: accounts!, selectedAccount: selectedAccount);
     });
-    if (result != null) {
-      getAccounts();
-    }
-  }
-
-  Future<void> openAccountListDialog() async {
-    var result = await showDialog<Account?>(context: context, builder: (context) {
-      return AccountsListDialog(accounts: accounts!);
-    });
-    if (result != null) {
-      getAccounts();
-    }
   }
 
   Future<void> openNewAccountDialog() async {
-    var result = await showDialog<Account?>(context: context, builder: (context) {
+    await showDialog<Account?>(context: context, builder: (context) {
       return const NewAccountDialog();
     });
-    if (result != null) {
-      getAccounts();
-    }
   }
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Money'),
-        scrolledUnderElevation: 0,
-      ),
+    return Navbar(
       floatingActionButton: accounts != null && accounts!.isNotEmpty ? FloatingActionButton(
         onPressed: openNewMovementDialog,
         backgroundColor: Theme.of(context).primaryColor,
@@ -147,7 +147,7 @@ class _HomeState extends State<Home> {
       tabs: [
         tabs.Tab(name: 'Dashboard', body: Dashboard(accounts: accounts!)),
         ...accounts!.asMap().map((index, account) =>
-            MapEntry(index, tabs.Tab(name: account.name, body: HomeTab(account: account, accounts: accounts!, key: tabKeys[index + 1], openAccountListDialog: openAccountListDialog)))
+            MapEntry(index, tabs.Tab(name: account.name, body: HomeTab(account: account, accounts: accounts!, key: tabKeys[index + 1])))
         ).values
       ],
     );
@@ -157,9 +157,8 @@ class _HomeState extends State<Home> {
 class HomeTab extends StatefulWidget {
   final Account? account;
   final List<Account> accounts;
-  final Future<void> Function() openAccountListDialog;
 
-  const HomeTab({ super.key, this.account, required this.accounts, required this.openAccountListDialog });
+  const HomeTab({ super.key, this.account, required this.accounts });
 
   @override
   State<HomeTab> createState() => _HomeTabState();
@@ -193,23 +192,11 @@ class _HomeTabState extends State<HomeTab> {
   Widget build(BuildContext context) {
     return Column(
       children: [
-        drawEditAccountButton(context),
         const SizedBox(height: 10),
         CurrencySelector(selected: currency, onSelectionChange: (newValue) => setState(() { currency = newValue; })),
         TotalViewer(account: widget.account, accounts: widget.accounts, currency: currency, padding: const EdgeInsets.symmetric(vertical: 30)),
         MovementsList(account: widget.account, currency: currency, key: movementsKey),
       ],
-    );
-  }
-
-  Widget drawEditAccountButton(BuildContext context) {
-    return SizedBox(
-      height: 30,
-      child: CupertinoButton(
-        padding: EdgeInsets.zero,
-        onPressed: widget.openAccountListDialog,
-        child: const Text('Editar cuentas'),
-      ),
     );
   }
 }
