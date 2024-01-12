@@ -43,6 +43,7 @@ class MigrationsRepository extends BaseRepository<Migration> {
         await runMigration(migrationDefinition.name);
       }
     }
+    logger.i('Finished migration sync');
   }
 
   Future<void> runMigration(String name) async {

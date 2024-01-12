@@ -23,10 +23,12 @@ class _NewAccountDialogState extends State<NewAccountDialog> {
   }
 
   Future<void> submit() async {
+    var accountsCount = await databaseService.accountsRepository.count();
     var account = Account(
       name: nameInputController.text,
       total: 0,
       currency: currency,
+      sortIndex: accountsCount,
     );
     await databaseService.initialized;
     var result = await databaseService.accountsRepository.insert(account);

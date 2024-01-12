@@ -3,13 +3,13 @@ import 'dart:ui';
 
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:money/views/accounts_list/accounts_list.dialog.dart';
 
 class Navbar extends StatefulWidget {
   final Widget body;
   final FloatingActionButton? floatingActionButton;
+  final String title;
 
-  const Navbar({ super.key, required this.body, this.floatingActionButton });
+  const Navbar({ super.key, required this.body, this.floatingActionButton, this.title = 'Money' });
 
   @override
   State<Navbar> createState() => _NavbarState();
@@ -27,7 +27,7 @@ class _NavbarState extends State<Navbar> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Money'),
+        title: Text(widget.title),
         centerTitle: true,
         scrolledUnderElevation: 0,
         actions: [
@@ -46,11 +46,19 @@ class _NavbarState extends State<Navbar> {
 class NavigationMenu extends StatelessWidget {
   const NavigationMenu({ super.key });
 
-  void openAccountListDialog(BuildContext context) async {
+  void goToHome(BuildContext context) async {
     Navigator.of(context).pop();
-    await showDialog<bool?>(context: context, builder: (context) {
-      return const AccountsListDialog();
-    });
+    await Navigator.of(context).pushNamedAndRemoveUntil('/', (route) => false);
+  }
+
+  void goToAccounts(BuildContext context) async {
+    Navigator.of(context).pop();
+    await Navigator.of(context).pushNamed('/accounts');
+  }
+
+  void goToCategories(BuildContext context) async {
+    Navigator.of(context).pop();
+    await Navigator.of(context).pushNamed('/categories');
   }
 
   @override
@@ -64,13 +72,19 @@ class NavigationMenu extends StatelessWidget {
         children: [
           CupertinoButton(
             padding: EdgeInsets.zero,
-            onPressed: () => openAccountListDialog(context),
+            onPressed: () => goToHome(context),
+            child: const Text('Home', style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Colors.white)),
+          ),
+          const SizedBox(height: 20),
+          CupertinoButton(
+            padding: EdgeInsets.zero,
+            onPressed: () => goToAccounts(context),
             child: const Text('Editar cuentas', style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Colors.white)),
           ),
           const SizedBox(height: 20),
           CupertinoButton(
             padding: EdgeInsets.zero,
-            onPressed: () => null,
+            onPressed: () => goToCategories(context),
             child: const Text('Editar categorías', style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Colors.white)),
           ),
         ],

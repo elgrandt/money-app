@@ -211,6 +211,11 @@ abstract class BaseRepository<Model extends BaseModel> {
     return result;
   }
 
+  Future<int> count({ String? where, List<Object?> args = const[] }) async {
+    var result = await db.query(tableName, columns: ['COUNT(*)'], where: where, whereArgs: args);
+    return Sqflite.firstIntValue(result) ?? 0;
+  }
+
   Map<String, Object?> modelToMap(Model model);
 
   Model mapToModel(Map<String, Object?> map);

@@ -8,10 +8,10 @@ import 'package:money/models/movement.model.dart';
 import 'package:money/repositories/base.repository.dart';
 import 'package:money/services/database.service.dart';
 import 'package:money/services/utils.service.dart';
+import 'package:money/views/categories/new_category.dialog.dart';
 import 'package:money/views/generics/button_selector.dart';
 import 'package:money/views/generics/cupertino_select.dart';
 import 'package:flutter_masked_text2/flutter_masked_text2.dart';
-import 'package:money/views/new_category/new_category.dialog.dart';
 
 
 class NewMovementDialog extends StatefulWidget {
@@ -25,12 +25,6 @@ class NewMovementDialog extends StatefulWidget {
 }
 
 class _NewMovementDialogState extends State<NewMovementDialog> {
-  static var movementTypeNames = {
-    MovementType.ADD: 'Ingreso',
-    MovementType.REMOVE: 'Gasto',
-    MovementType.TRANSFER: 'Transferencia',
-  };
-
   Map<MovementType, List<Category>> categoriesByType = {
     MovementType.ADD: [],
     MovementType.REMOVE: [],

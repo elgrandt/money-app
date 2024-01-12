@@ -9,6 +9,7 @@ class AccountsRepository extends BaseRepository<Account> {
     DatabaseColumnDefinition('name', DatabaseColumnType.TEXT),
     DatabaseColumnDefinition('total', DatabaseColumnType.REAL),
     DatabaseColumnDefinition('currency', DatabaseColumnType.TEXT),
+    DatabaseColumnDefinition('sortIndex', DatabaseColumnType.INTEGER),
   ];
 
   AccountsRepository(Database db): super(db, 'accounts', AccountsRepository.accountColumns);
@@ -22,6 +23,7 @@ class AccountsRepository extends BaseRepository<Account> {
     map['name'] = model.name;
     map['total'] = model.total;
     map['currency'] = model.currency.name;
+    map['sortIndex'] = model.sortIndex;
     return map;
   }
 
@@ -31,7 +33,8 @@ class AccountsRepository extends BaseRepository<Account> {
       name: map['name'] as String,
       total: map['total'] as double,
       currency: Currency.values.byName(map['currency'] as String),
-      id: map['id'] as int?
+      id: map['id'] as int?,
+      sortIndex: map['sortIndex'] as int
     );
   }
 

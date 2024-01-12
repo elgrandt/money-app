@@ -8,7 +8,7 @@ import 'package:money/models/movement.model.dart';
 import 'package:money/repositories/base.repository.dart';
 import 'package:money/services/database.service.dart';
 import 'package:money/services/utils.service.dart';
-import 'package:money/views/accounts_list/accounts_list.dialog.dart';
+import 'package:money/views/accounts/new_account.dialog.dart';
 import 'package:money/views/generics/currency_selector.dart';
 import 'package:money/views/generics/loader.dart';
 import 'package:money/views/generics/navbar.dart';
@@ -16,7 +16,6 @@ import 'package:money/views/generics/tabs.dart' as tabs;
 import 'package:money/views/home/dashboard.dart';
 import 'package:money/views/home/movements_list.dart';
 import 'package:money/views/home/total_viewer.dart';
-import 'package:money/views/new_account/new_account.dialog.dart';
 import 'package:money/views/new_movement/new_movement.dialog.dart';
 
 /*
@@ -68,7 +67,7 @@ class _HomeState extends State<Home> {
     await databaseService.initialized;
     try {
       logger.d('Getting accounts');
-      var accounts = await databaseService.accountsRepository.find();
+      var accounts = await databaseService.accountsRepository.find(orderBy: 'sortIndex ASC');
       setState(() {
         tabKeys = [GlobalKey<_HomeTabState>(), ...accounts.map((e) => GlobalKey<_HomeTabState>()).toList()];
         this.accounts = accounts;
@@ -97,7 +96,7 @@ class _HomeState extends State<Home> {
   }
 
   Future<void> openNewAccountDialog() async {
-    await showDialog<Account?>(context: context, builder: (context) {
+    await showDialog<bool?>(context: context, builder: (context) {
       return const NewAccountDialog();
     });
   }

@@ -3,6 +3,8 @@ import 'package:get_it/get_it.dart';
 import 'package:logger/logger.dart';
 import 'package:money/services/database.service.dart';
 import 'package:money/services/utils.service.dart';
+import 'package:money/views/accounts/account_list.dart';
+import 'package:money/views/categories/category_list.dart';
 import 'package:money/views/home/home.dart';
 
 void main() async {
@@ -39,7 +41,11 @@ class MoneyApp extends StatelessWidget {
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
         useMaterial3: true,
       ),
-      home: const Home(),
+      routes: {
+        '/': (context) => const Home(),
+        '/accounts': (context) => const AccountList(),
+        '/categories': (context) => const CategoryList(),
+      },
     );
   }
 }

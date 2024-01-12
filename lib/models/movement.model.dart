@@ -7,6 +7,11 @@ enum MovementType {
   REMOVE,
   TRANSFER
 }
+const movementTypeNames = {
+  MovementType.ADD: 'Ingreso',
+  MovementType.REMOVE: 'Gasto',
+  MovementType.TRANSFER: 'Transferencia',
+};
 
 class Movement extends BaseModel {
   MovementType type;
