@@ -1,7 +1,7 @@
 
 import 'dart:convert';
 
-import 'package:flutter/widgets.dart';
+import 'package:flutter/material.dart';
 import 'package:get_it/get_it.dart';
 import 'package:intl/intl.dart';
 import 'package:logger/logger.dart';
@@ -100,5 +100,30 @@ class UtilsService {
 
   String getCurrencySymbol(Currency currency) {
     return currencyConfigs.firstWhere((config) => config.currency == currency).symbol;
+  }
+
+  Future<bool> confirm(BuildContext context, { String? title, String? message, String confirmText = 'Confirmar', String cancelText = 'Cancelar' }) async {
+    return await showDialog<bool?>(context: context, builder: (context) {
+      return AlertDialog(
+        title: title != null ? Text(title, textAlign: TextAlign.center, style: TextStyle(fontSize: 20, color: Theme.of(context).primaryColor, fontWeight: FontWeight.bold)) : null,
+        content: message != null ? Text(message, textAlign: TextAlign.center, style: Theme.of(context).textTheme.bodyLarge?.copyWith(fontSize: 18)) : null,
+        actions: [
+          TextButton(
+              style: ButtonStyle(fixedSize: MaterialStateProperty.all(const Size(100, 30))),
+              onPressed: () => Navigator.of(context).pop(false),
+              child: Text(cancelText, textAlign: TextAlign.center, style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Theme.of(context).primaryColor))
+          ),
+          ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Theme.of(context).primaryColor,
+                foregroundColor: Colors.white,
+                fixedSize: const Size(140, 30),
+              ),
+              onPressed: () => Navigator.of(context).pop(true),
+              child: Text(confirmText, textAlign: TextAlign.center, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white))
+          ),
+        ],
+      );
+    }) ?? false;
   }
 }

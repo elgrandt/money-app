@@ -157,4 +157,18 @@ class MovementsRepository extends BaseRepository<Movement> {
     }
     return movement;
   }
+
+  Future<void> remove(Movement movement) async {
+    var databaseService = GetIt.instance.get<DatabaseService>();
+    if (movement.source != null) {
+      await databaseService.accountsRepository.updateBalance(movement.source!.id!, movement.amount);
+    }
+    if (movement.target != null && movement.conversionRate == null) {
+      await databaseService.accountsRepository.updateBalance(movement.target!.id!, -movement.amount);
+    }
+    if (movement.target != null && movement.conversionRate != null) {
+      await databaseService.accountsRepository.updateBalance(movement.target!.id!, -movement.amount * movement.conversionRate!);
+    }
+    await delete(movement.id!);
+  }
 }

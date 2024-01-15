@@ -16,7 +16,7 @@ import 'package:money/views/generics/tabs.dart' as tabs;
 import 'package:money/views/home/dashboard.dart';
 import 'package:money/views/home/movements_list.dart';
 import 'package:money/views/home/total_viewer.dart';
-import 'package:money/views/new_movement/new_movement.dialog.dart';
+import 'package:money/views/movements/new_movement.dialog.dart';
 
 /*
 TODO

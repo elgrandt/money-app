@@ -25,11 +25,12 @@ class EasyPieChart<T> extends StatelessWidget {
   List<PieChartSectionData> getSections(List<Color> colors) {
     List<PieChartSectionData> sections = [];
     for (var i = 0; i < items.length; i++) {
+      var percent = value(items[i]) / total * 100;
       sections.add(PieChartSectionData(
         color: colors[i],
         value: value(items[i]),
         radius: maxWidth != double.infinity ? maxWidth / 2 - 10 : maxHeight != double.infinity ? maxHeight / 2 - 10 : 100,
-        title: '${(value(items[i]) / total * 100).toStringAsFixed(0)}%',
+        title: percent >= 10 ? '${percent.toStringAsFixed(0)}%' : '',
         titleStyle: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white),
       ));
     }
