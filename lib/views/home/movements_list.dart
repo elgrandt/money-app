@@ -23,8 +23,6 @@ class MovementsList extends StatefulWidget {
 
 class MovementsListState extends State<MovementsList> {
   List<Movement>? movements;
-  int page = 0;
-  int itemsPerPage = 10;
   var databaseService = GetIt.instance.get<DatabaseService>();
   EventListener<TableUpdateEvent<Movement>>? movementsListener;
 
@@ -58,7 +56,7 @@ class MovementsListState extends State<MovementsList> {
   Future<void> getMovements() async {
     await databaseService.initialized;
     try {
-      var movements = await databaseService.movementsRepository.getLastMovements(widget.account, page, itemsPerPage);
+      var movements = await databaseService.movementsRepository.getLastMovements(widget.account);
       setState(() {
         this.movements = movements;
       });

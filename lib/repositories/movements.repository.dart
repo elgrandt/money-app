@@ -124,11 +124,11 @@ class MovementsRepository extends BaseRepository<Movement> {
     return models;
   }
 
-  Future<List<Movement>> getLastMovements(Account? account, int page, int itemsPerPage) {
+  Future<List<Movement>> getLastMovements(Account? account, { int? page, int? itemsPerPage }) {
     return find(
       where: account != null ? 'sourceId = ? OR targetId = ?' : null,
-      limit: itemsPerPage,
-      offset: itemsPerPage * page,
+      limit: page != null && itemsPerPage != null ? itemsPerPage : null,
+      offset: page != null && itemsPerPage != null ? itemsPerPage * page : null,
       args: account != null ? [account.id, account.id] : [],
       orderBy: 'creationDate DESC'
     );
