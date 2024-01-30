@@ -5,6 +5,7 @@ import 'package:money/models/account.model.dart';
 import 'package:money/models/movement.model.dart';
 import 'package:money/repositories/base.repository.dart';
 import 'package:money/services/database.service.dart';
+import 'package:money/services/utils.service.dart';
 import 'package:sqflite/sqflite.dart';
 
 class MovementsRepository extends BaseRepository<Movement> {
@@ -170,5 +171,39 @@ class MovementsRepository extends BaseRepository<Movement> {
       await databaseService.accountsRepository.updateBalance(movement.target!.id!, -movement.amount * movement.conversionRate!);
     }
     await delete(movement.id!);
+  }
+
+  Future<List<Map<String, Object?>>> getExpensesByCategory(Account? account, MovementType? movementType, DateTime? startDate) async {
+    if (account != null) {
+      var query = 'SELECT category, SUM(amount) AS total FROM movements WHERE type = ?';
+      List<dynamic> args = [movementType!.name];
+      query += ' AND (sourceId = ? OR targetId = ?)';
+      args.add(account.id!);
+      args.add(account.id!);
+      if (startDate != null) {
+        query += ' AND creationDate >= ?';
+        args.add(startDate.toString());
+      }
+      query += ' GROUP BY category';
+      return await db.rawQuery(query, args);
+    } else {
+      var movements = await find(where: 'type = ?', args: [movementType!.name]);
+      return movements.fold<Map<String, double>>({}, (map, movement) {
+        var category = movement.category;
+        double amount;
+        if (movement.type == MovementType.ADD || movement.type == MovementType.REMOVE) {
+          var account = movement.type == MovementType.ADD ? movement.target : movement.source;
+          amount = GetIt.instance.get<UtilsService>().convertCurrencies(movement.amount, account!.currency, Currency.USD);
+        } else {
+          amount = movement.type == MovementType.TRANSFER ? movement.amount : movement.amount * movement.conversionRate!;
+        }
+        if (map.containsKey(category)) {
+          map[category] = map[category]! + amount;
+        } else {
+          map[category] = amount;
+        }
+        return map;
+      }).entries.map((entry) => {'category': entry.key, 'total': entry.value}).toList();
+    }
   }
 }

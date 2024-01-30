@@ -61,6 +61,11 @@ class NavigationMenu extends StatelessWidget {
     await Navigator.of(context).pushNamed('/categories');
   }
 
+  void goToStatistics(BuildContext context) async {
+    Navigator.of(context).pop();
+    await Navigator.of(context).pushNamed('/statistics');
+  }
+
   @override
   Widget build(BuildContext context) {
     return BackdropFilter(
@@ -86,6 +91,12 @@ class NavigationMenu extends StatelessWidget {
             padding: EdgeInsets.zero,
             onPressed: () => goToCategories(context),
             child: const Text('Editar categorías', style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Colors.white)),
+          ),
+          const SizedBox(height: 20),
+          CupertinoButton(
+            padding: EdgeInsets.zero,
+            onPressed: () => goToStatistics(context),
+            child: const Text('Estadísticas', style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Colors.white)),
           ),
         ],
       ),

@@ -15,12 +15,13 @@ enum LabelPosition {
 class EasyPieChart<T> extends StatelessWidget {
   final LabelPosition labelPosition;
   final List<T> items;
-  final String Function(T item) label;
+  final String Function(T item)? label;
   final double Function(T item) value;
-  final Random randomGenerator;
+  final Random? randomGenerator;
   final double maxHeight;
   final double maxWidth;
   final double maxLabelWidth;
+  final List<Color>? colors;
 
   List<PieChartSectionData> getSections(List<Color> colors) {
     List<PieChartSectionData> sections = [];
@@ -42,49 +43,53 @@ class EasyPieChart<T> extends StatelessWidget {
     return items.map((item) => value(item)).reduce((value, element) => value + element);
   }
 
-  const EasyPieChart({ super.key, this.labelPosition = LabelPosition.bottom, required this.items, required this.label, required this.value, required this.randomGenerator, this.maxHeight = double.infinity, this.maxWidth = double.infinity, this.maxLabelWidth = double.infinity });
+  const EasyPieChart({ super.key, this.labelPosition = LabelPosition.bottom, required this.items, this.label, required this.value, this.randomGenerator, this.maxHeight = double.infinity, this.maxWidth = double.infinity, this.maxLabelWidth = double.infinity, this.colors });
 
-   @override
+  @override
   Widget build(BuildContext context) {
     if (total == 0) return Container();
-  List<Color> colors = items.map((item) => Colors.primaries[randomGenerator.nextInt(Colors.primaries.length)]).toList();
-    switch (labelPosition) {
-      case LabelPosition.left:
-        return Row(
-          mainAxisSize: MainAxisSize.max,
-          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-          children: [
-            buildChart(context, colors),
-            buildLabelsVertical(context, colors),
-          ],
-        );
-      case LabelPosition.right:
-        return Row(
-          mainAxisSize: MainAxisSize.max,
-          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-          children: [
-            buildLabelsVertical(context, colors),
-            buildChart(context, colors),
-          ],
-        );
-      case LabelPosition.top:
-        return Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            buildLabelsHorizontal(context, colors),
-            buildChart(context, colors),
-          ],
-        );
-      case LabelPosition.bottom:
-        return Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            buildChart(context, colors),
-            buildLabelsHorizontal(context, colors),
-          ],
-        );
-      case LabelPosition.none:
-        return buildChart(context, colors);
+    List<Color> colors = this.colors != null ? this.colors! : items.map((item) => Colors.primaries[randomGenerator!.nextInt(Colors.primaries.length)].shade700).toList();
+    if (this.label != null) {
+      switch (labelPosition) {
+        case LabelPosition.left:
+          return Row(
+            mainAxisSize: MainAxisSize.max,
+            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+            children: [
+              buildChart(context, colors),
+              buildLabelsVertical(context, colors),
+            ],
+          );
+        case LabelPosition.right:
+          return Row(
+            mainAxisSize: MainAxisSize.max,
+            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+            children: [
+              buildLabelsVertical(context, colors),
+              buildChart(context, colors),
+            ],
+          );
+        case LabelPosition.top:
+          return Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              buildLabelsHorizontal(context, colors),
+              buildChart(context, colors),
+            ],
+          );
+        case LabelPosition.bottom:
+          return Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              buildChart(context, colors),
+              buildLabelsHorizontal(context, colors),
+            ],
+          );
+        case LabelPosition.none:
+          return buildChart(context, colors);
+      }
+    } else {
+      return buildChart(context, colors);
     }
   }
 
@@ -154,7 +159,7 @@ class EasyPieChart<T> extends StatelessWidget {
           constraints: BoxConstraints(
             maxWidth: maxLabelWidth,
           ),
-          child: Text(label(item), style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold), overflow: TextOverflow.ellipsis),
+          child: Text(label!(item), style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold), overflow: TextOverflow.ellipsis),
         ),
       ],
     );
