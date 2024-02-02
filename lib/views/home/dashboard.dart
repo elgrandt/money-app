@@ -7,6 +7,8 @@ import 'package:money/models/account.model.dart';
 import 'package:money/services/utils.service.dart';
 import 'package:money/views/generics/easy_pie_chart.dart';
 import 'package:money/views/home/total_viewer.dart';
+import 'package:money/views/statistics/expenses_by_category.dart';
+import 'package:money/views/statistics/expenses_by_day.dart';
 
 class Dashboard extends StatelessWidget {
   final List<Account> accounts;
@@ -19,6 +21,14 @@ class Dashboard extends StatelessWidget {
       children: [
         buildTotal(context),
         buildTotalsChart(context),
+        const SizedBox(height: 15),
+        const Divider(),
+        const SizedBox(height: 15),
+        buildExpensesByCategoryChart(context),
+        const SizedBox(height: 15),
+        const Divider(),
+        const SizedBox(height: 15),
+        buildExpensesByDayChart(context),
       ],
     );
   }
@@ -44,5 +54,13 @@ class Dashboard extends StatelessWidget {
       maxHeight: 200,
       maxLabelWidth: 200,
     );
+  }
+
+  Widget buildExpensesByCategoryChart(BuildContext context) {
+    return const ExpensesByCategoryChart();
+  }
+
+  Widget buildExpensesByDayChart(BuildContext context) {
+    return const ExpensesByDayChart();
   }
 }
