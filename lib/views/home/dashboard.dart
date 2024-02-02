@@ -57,10 +57,22 @@ class Dashboard extends StatelessWidget {
   }
 
   Widget buildExpensesByCategoryChart(BuildContext context) {
-    return const ExpensesByCategoryChart();
+    return const Column(
+      children: [
+        Text('Movimientos por categoría', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold), textAlign: TextAlign.center),
+        SizedBox(height: 20),
+        ExpensesByCategoryChart(),
+      ],
+    );
   }
 
   Widget buildExpensesByDayChart(BuildContext context) {
-    return const ExpensesByDayChart();
+    return const Column(
+      children: [
+        Text('Movimientos por día', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold), textAlign: TextAlign.center),
+        SizedBox(height: 20),
+        ExpensesByDayChart(),
+      ],
+    );
   }
 }
