@@ -1,7 +1,9 @@
 
 import 'package:events_emitter/events_emitter.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:get_it/get_it.dart';
+import 'package:intl/intl.dart';
 import 'package:money/models/account.model.dart';
 import 'package:money/models/category.model.dart';
 import 'package:money/models/movement.model.dart';
@@ -38,6 +40,7 @@ class _NewMovementDialogState extends State<NewMovementDialog> {
   String? selectedCategory;
   late Account source;
   late Account target;
+  late DateTime creationDate;
 
   final amountInputController = MoneyMaskedTextController(decimalSeparator: ',', thousandSeparator: '.', precision: 2, initialValue: 0);
   final conversionRateInputController = MoneyMaskedTextController(decimalSeparator: ',', thousandSeparator: '.', precision: 2, initialValue: 1);
@@ -61,6 +64,7 @@ class _NewMovementDialogState extends State<NewMovementDialog> {
       source = widget.accounts.first;
       target = widget.accounts.first;
     }
+    creationDate = DateTime.now();
     getCategories();
     watchCategories();
   }
@@ -81,6 +85,7 @@ class _NewMovementDialogState extends State<NewMovementDialog> {
       selectedCategory!,
       source,
       target,
+      creationDate
     );
     if (!context.mounted) return;
     Navigator.of(context).pop(result);
@@ -111,6 +116,24 @@ class _NewMovementDialogState extends State<NewMovementDialog> {
     });
   }
 
+  void _showDialog(Widget child) {
+    showCupertinoModalPopup<void>(
+      context: context,
+      builder: (BuildContext context) => Container(
+        height: 216,
+        padding: const EdgeInsets.only(top: 6.0),
+        margin: EdgeInsets.only(
+          bottom: MediaQuery.of(context).viewInsets.bottom,
+        ),
+        color: CupertinoColors.systemBackground.resolveFrom(context),
+        child: SafeArea(
+          top: false,
+          child: child,
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Dialog(
@@ -135,6 +158,7 @@ class _NewMovementDialogState extends State<NewMovementDialog> {
               const SizedBox(height: 10),
               buildDescriptionInput(context),
               const SizedBox(height: 10),
+              buildCreationDateInput(context),
               buildCategorySelector(context),
               const SizedBox(height: 10),
               buildActionButtons(context),
@@ -279,6 +303,28 @@ class _NewMovementDialogState extends State<NewMovementDialog> {
         contentPadding: EdgeInsets.symmetric(horizontal: 15, vertical: 0),
       ),
       controller: descriptionInputController,
+    );
+  }
+
+  Widget buildCreationDateInput(BuildContext context) {
+    return CupertinoButton(
+      padding: EdgeInsets.zero,
+      onPressed: () {
+        _showDialog(
+          CupertinoDatePicker(
+            mode: CupertinoDatePickerMode.dateAndTime,
+            initialDateTime: creationDate,
+            maximumDate: DateTime.now(),
+            use24hFormat: true,
+            onDateTimeChanged: (date) {
+              setState(() {
+                creationDate = date;
+              });
+            },
+          )
+        );
+      },
+      child: Text(DateFormat('dd/MM/yyyy HH:mm').format(creationDate), style: const TextStyle(fontSize: 20)),
     );
   }
 

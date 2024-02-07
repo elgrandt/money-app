@@ -40,11 +40,13 @@ dependencies:
   sqflite: ^2.3.0
   logger: ^2.0.2+1
   currency_icons: ^0.3.0
-  intl: ^0.19.0
+  intl: ^0.18.1
   flutter_masked_text2: ^0.9.1
   http: ^1.1.2
   fl_chart: ^0.66.0
   events_emitter: ^0.5.2
+  flutter_localizations:
+    sdk: flutter
 
 dev_dependencies:
   flutter_test:

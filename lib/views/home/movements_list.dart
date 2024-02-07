@@ -2,6 +2,7 @@ import 'package:events_emitter/events_emitter.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:get_it/get_it.dart';
+import 'package:intl/intl.dart';
 import 'package:logger/logger.dart';
 import 'package:money/models/account.model.dart';
 import 'package:money/models/movement.model.dart';
@@ -214,7 +215,7 @@ class MovementListItem extends StatelessWidget {
   }
 
   Widget buildDate(BuildContext context) {
-    var text = '${movement.creationDate!.day}/${movement.creationDate!.month}/${movement.creationDate!.year}';
+    var text = DateFormat('dd/MM/yyyy').format(movement.creationDate!);
     var today = DateTime.now();
     var yesterday = DateTime.now().subtract(const Duration(days: 1));
     if (movement.creationDate!.day == today.day && movement.creationDate!.month == today.month && movement.creationDate!.year == today.year) {
@@ -222,6 +223,7 @@ class MovementListItem extends StatelessWidget {
     } else if (movement.creationDate!.day == yesterday.day && movement.creationDate!.month == yesterday.month && movement.creationDate!.year == yesterday.year) {
       text = 'Ayer';
     }
+    text += ' ${ DateFormat('HH:mm').format(movement.creationDate!) }';
     return Text(
       text,
       style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)

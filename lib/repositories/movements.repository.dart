@@ -40,6 +40,7 @@ class MovementsRepository extends BaseRepository<Movement> {
     map['sourceId'] = model.source?.id;
     map['targetId'] = model.target?.id;
     map['conversionRate'] = model.conversionRate;
+    map['creationDate'] = model.creationDate?.toIso8601String();
     return map;
   }
 
@@ -136,7 +137,7 @@ class MovementsRepository extends BaseRepository<Movement> {
     );
   }
 
-  Future<Movement> create(MovementType movementType, String description, double amount, double conversionRate, String category, Account source, Account target) async {
+  Future<Movement> create(MovementType movementType, String description, double amount, double conversionRate, String category, Account source, Account target, DateTime? creationDate) async {
     var movement = Movement(
       movementType,
       description,
@@ -145,7 +146,9 @@ class MovementsRepository extends BaseRepository<Movement> {
       source: movementType == MovementType.REMOVE || movementType == MovementType.TRANSFER ? source : null,
       target: movementType == MovementType.ADD || movementType == MovementType.TRANSFER ? target : null,
       conversionRate: movementType == MovementType.TRANSFER && source.currency != target.currency ? conversionRate : null,
+      creationDate: creationDate,
     );
+    print(movement);
     movement = await insert(movement);
     var databaseService = GetIt.instance.get<DatabaseService>();
     if (movement.source != null) {
