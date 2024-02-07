@@ -148,7 +148,6 @@ class MovementsRepository extends BaseRepository<Movement> {
       conversionRate: movementType == MovementType.TRANSFER && source.currency != target.currency ? conversionRate : null,
       creationDate: creationDate,
     );
-    print(movement);
     movement = await insert(movement);
     var databaseService = GetIt.instance.get<DatabaseService>();
     if (movement.source != null) {

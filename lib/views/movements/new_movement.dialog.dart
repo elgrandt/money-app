@@ -4,6 +4,7 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:get_it/get_it.dart';
 import 'package:intl/intl.dart';
+import 'package:logger/logger.dart';
 import 'package:money/models/account.model.dart';
 import 'package:money/models/category.model.dart';
 import 'package:money/models/movement.model.dart';
@@ -14,24 +15,21 @@ import 'package:money/views/categories/new_category.dialog.dart';
 import 'package:money/views/generics/button_selector.dart';
 import 'package:money/views/generics/cupertino_select.dart';
 import 'package:flutter_masked_text2/flutter_masked_text2.dart';
+import 'package:money/views/generics/loader.dart';
 
 
 class NewMovementDialog extends StatefulWidget {
-  final List<Account> accounts;
   final Account? selectedAccount;
+  final Movement? movement;
 
-  const NewMovementDialog({ super.key, required this.accounts, this.selectedAccount });
+  const NewMovementDialog({ super.key, this.selectedAccount, this.movement });
 
   @override
   State<NewMovementDialog> createState() => _NewMovementDialogState();
 }
 
 class _NewMovementDialogState extends State<NewMovementDialog> {
-  Map<MovementType, List<Category>> categoriesByType = {
-    MovementType.ADD: [],
-    MovementType.REMOVE: [],
-    MovementType.TRANSFER: [],
-  };
+  Map<MovementType, List<Category>>? categoriesByType;
 
   final _formKey = GlobalKey<FormState>();
   MovementType movementType = MovementType.REMOVE;
@@ -41,12 +39,14 @@ class _NewMovementDialogState extends State<NewMovementDialog> {
   late Account source;
   late Account target;
   late DateTime creationDate;
+  List<Account>? accounts;
 
   final amountInputController = MoneyMaskedTextController(decimalSeparator: ',', thousandSeparator: '.', precision: 2, initialValue: 0);
   final conversionRateInputController = MoneyMaskedTextController(decimalSeparator: ',', thousandSeparator: '.', precision: 2, initialValue: 1);
   final descriptionInputController = TextEditingController();
   var databaseService = GetIt.instance.get<DatabaseService>();
   var utilsService = GetIt.instance.get<UtilsService>();
+  var logger = GetIt.instance.get<Logger>();
 
   EventListener<TableUpdateEvent<Category>>? categoriesListener;
 
@@ -54,19 +54,17 @@ class _NewMovementDialogState extends State<NewMovementDialog> {
     return _formKey.currentState != null && _formKey.currentState!.validate() && selectedCategory != null;
   }
 
+  get isEditing {
+    return widget.movement != null;
+  }
+
   @override
   void initState() {
     super.initState();
-    if (widget.selectedAccount != null) {
-      source = widget.selectedAccount!;
-      target = widget.selectedAccount!;
-    } else {
-      source = widget.accounts.first;
-      target = widget.accounts.first;
-    }
     creationDate = DateTime.now();
     getCategories();
     watchCategories();
+    getAccounts();
   }
 
   @override
@@ -77,6 +75,9 @@ class _NewMovementDialogState extends State<NewMovementDialog> {
 
   Future<void> submit() async {
     await databaseService.initialized;
+    if (isEditing) {
+      await databaseService.movementsRepository.remove(widget.movement!);
+    }
     var result = await databaseService.movementsRepository.create(
       movementType,
       descriptionInputController.text,
@@ -104,6 +105,31 @@ class _NewMovementDialogState extends State<NewMovementDialog> {
         selectedCategory = selected;
       });
     });
+  }
+
+  void getAccounts() async {
+    await databaseService.initialized;
+    try {
+      var accounts = await databaseService.accountsRepository.find(orderBy: 'sortIndex ASC');
+      setState(() {
+        this.accounts = accounts;
+      });
+      if (isEditing) {
+        fillFormDataWithMovement(widget.movement!);
+      } else {
+        setState(() {
+          if (widget.selectedAccount != null) {
+            source = widget.selectedAccount!;
+            target = widget.selectedAccount!;
+          } else {
+            source = accounts.first;
+            target = accounts.first;
+          }
+        });
+      }
+    } catch (error, stackTrace) {
+      logger.e('Error getting accounts', error: error, stackTrace: stackTrace);
+    }
   }
 
   void watchCategories() {
@@ -134,6 +160,21 @@ class _NewMovementDialogState extends State<NewMovementDialog> {
     );
   }
 
+  void fillFormDataWithMovement(Movement movement) {
+    setState(() {
+      movementType = movement.type;
+      amountInputController.text = movement.amount.toStringAsFixed(2);
+      amount = movement.amount;
+      source = movement.source ?? movement.target!;
+      target = movement.target ?? movement.source!;
+      creationDate = movement.creationDate ?? DateTime.now();
+      descriptionInputController.text = movement.description;
+      conversionRate = movement.conversionRate ?? 1;
+      conversionRateInputController.text = conversionRate.toStringAsFixed(2);
+      selectedCategory = movement.category;
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     return Dialog(
@@ -145,21 +186,7 @@ class _NewMovementDialogState extends State<NewMovementDialog> {
           child: Column(
             children: [
               buildTitle(context),
-              const SizedBox(height: 10),
-              buildTypeSelect(context),
-              const SizedBox(height: 10),
-              if (movementType == MovementType.TRANSFER || movementType == MovementType.REMOVE)
-                buildSourceSelect(context),
-              if (movementType == MovementType.TRANSFER || movementType == MovementType.ADD)
-                buildTargetSelect(context),
-              buildAmountInput(context),
-              if (movementType == MovementType.TRANSFER && source.currency != target.currency)
-                ...buildConversionRateSection(context),
-              const SizedBox(height: 10),
-              buildDescriptionInput(context),
-              const SizedBox(height: 10),
-              buildCreationDateInput(context),
-              buildCategorySelector(context),
+              ...buildContent(context),
               const SizedBox(height: 10),
               buildActionButtons(context),
             ],
@@ -169,8 +196,36 @@ class _NewMovementDialogState extends State<NewMovementDialog> {
     );
   }
 
+  List<Widget> buildContent(BuildContext context) {
+    if (categoriesByType != null && accounts != null) {
+      return [
+        const SizedBox(height: 10),
+        buildTypeSelect(context),
+        const SizedBox(height: 10),
+        if (movementType == MovementType.TRANSFER || movementType == MovementType.REMOVE)
+          buildSourceSelect(context),
+        if (movementType == MovementType.TRANSFER || movementType == MovementType.ADD)
+          buildTargetSelect(context),
+        buildAmountInput(context),
+        if (movementType == MovementType.TRANSFER && source.currency != target.currency)
+          ...buildConversionRateSection(context),
+        const SizedBox(height: 10),
+        buildDescriptionInput(context),
+        const SizedBox(height: 10),
+        buildCreationDateInput(context),
+        buildCategorySelector(context),
+      ];
+    } else {
+      return [const Loader()];
+    }
+  }
+
   Widget buildTitle(BuildContext context) {
-    return Text('Nuevo movimiento', textAlign: TextAlign.center, style: TextStyle(fontSize: 20, color: Theme.of(context).primaryColor, fontWeight: FontWeight.bold));
+    if (isEditing) {
+      return Text('Editar movimiento', textAlign: TextAlign.center, style: TextStyle(fontSize: 20, color: Theme.of(context).primaryColor, fontWeight: FontWeight.bold));
+    } else {
+      return Text('Nuevo movimiento', textAlign: TextAlign.center, style: TextStyle(fontSize: 20, color: Theme.of(context).primaryColor, fontWeight: FontWeight.bold));
+    }
   }
 
   Widget buildTypeSelect(BuildContext context) {
@@ -189,11 +244,11 @@ class _NewMovementDialogState extends State<NewMovementDialog> {
   Widget buildSourceSelect(BuildContext context) {
     return CupertinoSelect(
       label: 'Desde',
-      options: widget.accounts.map((e) => e.name).toList(),
-      selectedIndex: widget.accounts.indexOf(source),
+      options: accounts!.map((e) => e.name).toList(),
+      selectedIndex: accounts!.indexOf(source),
       onSelectedIndexChange: (index) {
         setState(() {
-          source = widget.accounts[index];
+          source = accounts![index];
         });
       },
     );
@@ -202,13 +257,13 @@ class _NewMovementDialogState extends State<NewMovementDialog> {
   Widget buildTargetSelect(BuildContext context) {
     return CupertinoSelect(
       label: 'Hacia',
-      options: widget.accounts.map((account) => account.name).toList(),
-      selectedIndex: widget.accounts.indexOf(target),
+      options: accounts!.map((account) => account.name).toList(),
+      selectedIndex: accounts!.indexOf(target),
       onSelectedIndexChange: (index) {
         setState(() {
-          target = widget.accounts[index];
-          if (categoriesByType[movementType]!.isNotEmpty) {
-            selectedCategory = categoriesByType[movementType]!.first.name;
+          target = accounts![index];
+          if (categoriesByType![movementType]!.isNotEmpty) {
+            selectedCategory = categoriesByType![movementType]!.first.name;
           }
         });
       },
@@ -329,7 +384,7 @@ class _NewMovementDialogState extends State<NewMovementDialog> {
   }
 
   Widget buildCategorySelector(BuildContext context) {
-    var categories = categoriesByType[movementType]!;
+    var categories = categoriesByType![movementType]!;
     return Column(
       children: [
         const Text('Categoría', textAlign: TextAlign.center, style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
@@ -371,7 +426,7 @@ class _NewMovementDialogState extends State<NewMovementDialog> {
           onPressed: canSubmit ? () {
             submit();
           } : null,
-          child: const Text('Crear', textAlign: TextAlign.center, style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white))
+          child: Text(isEditing ? 'Guardar' : 'Crear', textAlign: TextAlign.center, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white))
         ),
       ],
     );

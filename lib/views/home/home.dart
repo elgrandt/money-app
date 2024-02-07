@@ -91,7 +91,7 @@ class _HomeState extends State<Home> {
       selectedAccount = accounts![selectedTabIndex - 1];
     }
     await showDialog<Movement?>(context: context, builder: (context) {
-      return NewMovementDialog(accounts: accounts!, selectedAccount: selectedAccount);
+      return NewMovementDialog(selectedAccount: selectedAccount);
     });
   }
 

@@ -1,9 +1,11 @@
 
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:get_it/get_it.dart';
 import 'package:money/models/movement.model.dart';
 import 'package:money/services/database.service.dart';
 import 'package:money/services/utils.service.dart';
+import 'package:money/views/movements/new_movement.dialog.dart';
 
 class MovementDetailsDialog extends StatefulWidget {
   final Movement movement;
@@ -80,6 +82,16 @@ class _MovementDetailsDialogState extends State<MovementDetailsDialog> {
     }
   }
 
+  openEditMovementDialog(BuildContext context) async {
+    var result = await showDialog<Movement?>(context: context, builder: (context) {
+      return NewMovementDialog(movement: widget.movement);
+    });
+    if (result != null) {
+      if (!context.mounted) return;
+      Navigator.of(context).pop(true);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Dialog(
@@ -94,7 +106,7 @@ class _MovementDetailsDialogState extends State<MovementDetailsDialog> {
             ...buildDescription(context),
           if (widget.movement.creationDate != null)
             ...buildDate(context),
-          const SizedBox(height: 10),
+          const SizedBox(height: 5),
           buildActionButtons(context),
         ],
       ),
@@ -135,9 +147,14 @@ class _MovementDetailsDialogState extends State<MovementDetailsDialog> {
   }
 
   Widget buildActionButtons(BuildContext context) {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.center,
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.center,
       children: [
+        CupertinoButton(
+          padding: EdgeInsets.zero,
+          onPressed: () => openEditMovementDialog(context),
+          child: const Text('Editar movimiento', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+        ),
         ElevatedButton(
           onPressed: () => openDeleteMovementConfirmationDialog(),
           style: ElevatedButton.styleFrom(
