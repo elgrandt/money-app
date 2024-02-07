@@ -28,6 +28,10 @@ class _ExpensesByDayChartState extends State<ExpensesByDayChart> {
   String? selectedPeriod = 'week';
   var databaseService = GetIt.instance.get<DatabaseService>();
   var accumulated = false;
+  List<BarChartGroupData>? groups;
+  List<String>? days;
+  double? minY;
+  double? maxY;
 
   @override
   void initState() {
@@ -53,9 +57,71 @@ class _ExpensesByDayChartState extends State<ExpensesByDayChart> {
       startDate = DateTime.now().subtract(const Duration(days: 365));
     }
     var result = await databaseService.movementsRepository.getExpensesByDay(widget.account, selectedMovementType, startDate);
+    if (result.isNotEmpty) {
+      doCalculations(result);
+    } else {
+      setState(() {
+        expensesByDay = result;
+      });
+    }
+  }
+
+  void doCalculations(List<Map<String, Object?>> expensesByDay) {
+    // Calcular la fecha de inicio en función a la opción seleccionada
+    DateTime startDate;
+    if (selectedPeriod == 'week') {
+      startDate = DateTime.now().subtract(const Duration(days: 7));
+    } else if (selectedPeriod == 'month') {
+      startDate = DateTime.now().subtract(const Duration(days: 30));
+    } else if (selectedPeriod == 'year') {
+      startDate = DateTime.now().subtract(const Duration(days: 365));
+    } else {
+      startDate = DateTime.now();
+      for (var movement in expensesByDay) {
+        if (movement['date'] != null) {
+          var date = DateFormat('dd-MM-yyyy').parse(movement['date']! as String);
+          if (date.isBefore(startDate)) {
+            startDate = date;
+          }
+        }
+      }
+    }
+    // Generar la lista de días entre la fecha de inicio y la fecha actual
+    List<String> days = [];
+    var currentDate = startDate;
+    while (currentDate.isBefore(DateTime.now())) {
+      days.add(DateFormat('dd-MM-yyyy').format(currentDate));
+      currentDate = currentDate.add(const Duration(days: 1));
+    }
+    // generar los grupos de barras
+    List<BarChartGroupData> groups = [];
+    double sum = 0;
+    for (var i = 0; i < days.length; i++) {
+      var day = days[i];
+      var matches = expensesByDay.where((element) => element['date'] == day);
+      double amount = matches.isEmpty ? 0 : matches.first['total'] as double;
+      sum += amount;
+      groups.add(BarChartGroupData(
+        x: i,
+        barRods: [
+          BarChartRodData(
+            toY: accumulated ? sum : amount,
+            color: Colors.blue,
+          ),
+        ],
+      ));
+    }
+    // Calcular los valores mínimos y máximos
+    var minAmount = expensesByDay.map((e) => e['total'] as double).reduce(min);
+    var maxAmount = expensesByDay.map((e) => e['total'] as double).reduce(max);
+    double minY = min(0, minAmount);
+    double maxY = accumulated ? groups.last.barRods[0].toY : maxAmount;
     setState(() {
-      print(result);
-      expensesByDay = result;
+      this.expensesByDay = expensesByDay;
+      this.days = days;
+      this.groups = groups;
+      this.minY = minY;
+      this.maxY = maxY;
     });
   }
 
@@ -113,6 +179,9 @@ class _ExpensesByDayChartState extends State<ExpensesByDayChart> {
           onChanged: (value) {
             setState(() {
               accumulated = value;
+              if (expensesByDay != null && expensesByDay!.isNotEmpty) {
+                doCalculations(expensesByDay!);
+              }
             });
           },
         ),
@@ -128,121 +197,76 @@ class _ExpensesByDayChartState extends State<ExpensesByDayChart> {
   }
 
   Widget buildChart(BuildContext context) {
-    // Calcular la fecha de inicio en función a la opción seleccionada
-    DateTime startDate;
-    if (selectedPeriod == 'week') {
-      startDate = DateTime.now().subtract(const Duration(days: 7));
-    } else if (selectedPeriod == 'month') {
-      startDate = DateTime.now().subtract(const Duration(days: 30));
-    } else if (selectedPeriod == 'year') {
-      startDate = DateTime.now().subtract(const Duration(days: 365));
-    } else {
-      startDate = DateTime.now();
-      for (var movement in expensesByDay!) {
-        if (movement['date'] != null) {
-          var date = DateFormat('dd-MM-yyyy').parse(movement['date']! as String);
-          if (date.isBefore(startDate)) {
-            startDate = date;
-          }
-        }
-      }
-    }
-    // Generar la lista de días entre la fecha de inicio y la fecha actual
-    List<String> days = [];
-    var currentDate = startDate;
-    while (currentDate.isBefore(DateTime.now())) {
-      days.add(DateFormat('dd-MM-yyyy').format(currentDate));
-      currentDate = currentDate.add(const Duration(days: 1));
-    }
-    // generar los grupos de barras
-    List<BarChartGroupData> groups = [];
-    double sum = 0;
-    for (var i = 0; i < days.length; i++) {
-      var day = days[i];
-      var matches = expensesByDay!.where((element) => element['date'] == day);
-      double amount = matches.isEmpty ? 0 : matches.first['total'] as double;
-      sum += amount;
-      groups.add(BarChartGroupData(
-        x: i,
-        barRods: [
-          BarChartRodData(
-            toY: accumulated ? sum : amount,
-            color: Colors.blue,
-          ),
-        ],
-      ));
-    }
-    // Calcular los valores mínimos y máximos
-    var minAmount = expensesByDay!.map((e) => e['total'] as double).reduce(min);
-    var maxAmount = expensesByDay!.map((e) => e['total'] as double).reduce(max);
-    double minY = min(0, minAmount);
-    double maxY = accumulated ? groups.last.barRods[0].toY : maxAmount;
-    return SizedBox(
-      height: 300,
-      child: BarChart(
-        BarChartData(
-          barTouchData: BarTouchData(
-            touchTooltipData: BarTouchTooltipData(
-              tooltipBgColor: Colors.blueGrey,
-              tooltipHorizontalAlignment: FLHorizontalAlignment.center,
-              tooltipMargin: 0,
-              fitInsideVertically: true,
-              fitInsideHorizontally: true,
-              getTooltipItem: (group, groupIndex, rod, rodIndex) => getTooltipItem(days[groupIndex], rod.toY),
-            ),
-          ),
-          gridData: FlGridData(
-            show: true,
-            drawVerticalLine: true,
-            drawHorizontalLine: true,
-            getDrawingHorizontalLine: (value) => FlLine(
-              color: Colors.grey.shade300,
-              strokeWidth: 1,
-            ),
-            getDrawingVerticalLine: (value) => FlLine(
-              color: Colors.grey.shade300,
-              strokeWidth: 1,
-            ),
-          ),
-          titlesData: FlTitlesData(
-            show: true,
-            rightTitles: const AxisTitles(
-              sideTitles: SideTitles(showTitles: false),
-            ),
-            topTitles: const AxisTitles(
-              sideTitles: SideTitles(showTitles: false),
-            ),
-            bottomTitles: AxisTitles(
-              sideTitles: SideTitles(
-                showTitles: true,
-                reservedSize: 110,
-                getTitlesWidget: (value, meta) => bottomTitleWidgets(days[value.toInt()], meta, (value % (days.length / 10).ceil()) == 0),
+    if (groups != null && days != null && minY != null && maxY != null) {
+      return SizedBox(
+        height: 300,
+        child: BarChart(
+          BarChartData(
+            barTouchData: BarTouchData(
+              touchTooltipData: BarTouchTooltipData(
+                tooltipBgColor: Colors.blueGrey,
+                tooltipHorizontalAlignment: FLHorizontalAlignment.center,
+                tooltipMargin: 0,
+                fitInsideVertically: true,
+                fitInsideHorizontally: true,
+                getTooltipItem: (group, groupIndex, rod, rodIndex) => getTooltipItem(days![groupIndex], rod.toY),
               ),
             ),
-            leftTitles: AxisTitles(
-              sideTitles: SideTitles(
-                showTitles: true,
-                interval: 1,
-                getTitlesWidget: (value, meta) => leftTitleWidgets(value, meta, (value % ((maxY - minY) / 5).ceil()) == 0),
-                reservedSize: 42,
+            gridData: FlGridData(
+              show: true,
+              drawVerticalLine: true,
+              drawHorizontalLine: true,
+              getDrawingHorizontalLine: (value) => FlLine(
+                color: Colors.grey.shade300,
+                strokeWidth: 1,
               ),
-              axisNameWidget: getLeftAxisName(),
-              axisNameSize: 15
+              getDrawingVerticalLine: (value) => FlLine(
+                color: Colors.grey.shade300,
+                strokeWidth: 1,
+              ),
             ),
-          ),
-          borderData: FlBorderData(
-            show: true,
-            border: Border(
-              left: BorderSide(color: Colors.grey.shade400),
-              bottom: BorderSide(color: Colors.grey.shade400),
+            titlesData: FlTitlesData(
+              show: true,
+              rightTitles: const AxisTitles(
+                sideTitles: SideTitles(showTitles: false),
+              ),
+              topTitles: const AxisTitles(
+                sideTitles: SideTitles(showTitles: false),
+              ),
+              bottomTitles: AxisTitles(
+                sideTitles: SideTitles(
+                  showTitles: true,
+                  reservedSize: 110,
+                  getTitlesWidget: (value, meta) => bottomTitleWidgets(days![value.toInt()], meta, (value % (days!.length / 10).ceil()) == 0),
+                ),
+              ),
+              leftTitles: AxisTitles(
+                  sideTitles: SideTitles(
+                    showTitles: true,
+                    interval: 1,
+                    getTitlesWidget: (value, meta) => leftTitleWidgets(value, meta, (value % ((maxY! - minY!) / 5).ceil()) == 0),
+                    reservedSize: 42,
+                  ),
+                  axisNameWidget: getLeftAxisName(),
+                  axisNameSize: 15
+              ),
             ),
+            borderData: FlBorderData(
+              show: true,
+              border: Border(
+                left: BorderSide(color: Colors.grey.shade400),
+                bottom: BorderSide(color: Colors.grey.shade400),
+              ),
+            ),
+            minY: minY!,
+            maxY: maxY!,
+            barGroups: groups!,
           ),
-          minY: minY,
-          maxY: maxY,
-          barGroups: groups,
         ),
-      ),
-    );
+      );
+    } else {
+      return const SizedBox();
+    }
   }
 
   Widget bottomTitleWidgets(String value, TitleMeta meta, bool show) {

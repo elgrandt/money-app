@@ -29,6 +29,7 @@ class Dashboard extends StatelessWidget {
         const Divider(),
         const SizedBox(height: 15),
         buildExpensesByDayChart(context),
+        const SizedBox(height: 100),
       ],
     );
   }
