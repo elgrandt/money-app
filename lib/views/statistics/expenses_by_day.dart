@@ -56,9 +56,13 @@ class _ExpensesByDayChartState extends State<ExpensesByDayChart> {
     } else if (selectedPeriod == 'year') {
       startDate = DateTime.now().subtract(const Duration(days: 365));
     }
+    print('Getting expenses by day');
     var result = await databaseService.movementsRepository.getExpensesByDay(widget.account, selectedMovementType, startDate);
+    print('Finished getting expenses by day');
     if (result.isNotEmpty) {
+      print('Doing calculations');
       doCalculations(result);
+      print('Finished calculations');
     } else {
       setState(() {
         expensesByDay = result;
@@ -68,6 +72,7 @@ class _ExpensesByDayChartState extends State<ExpensesByDayChart> {
 
   void doCalculations(List<Map<String, Object?>> expensesByDay) {
     // Calcular la fecha de inicio en función a la opción seleccionada
+    print('Calculating date');
     DateTime startDate;
     if (selectedPeriod == 'week') {
       startDate = DateTime.now().subtract(const Duration(days: 7));
@@ -87,6 +92,7 @@ class _ExpensesByDayChartState extends State<ExpensesByDayChart> {
       }
     }
     // Generar la lista de días entre la fecha de inicio y la fecha actual
+    print('Calculating days list');
     List<String> days = [];
     var currentDate = startDate;
     while (currentDate.isBefore(DateTime.now())) {
@@ -94,6 +100,7 @@ class _ExpensesByDayChartState extends State<ExpensesByDayChart> {
       currentDate = currentDate.add(const Duration(days: 1));
     }
     // generar los grupos de barras
+    print('Calculating groups');
     List<BarChartGroupData> groups = [];
     double sum = 0;
     for (var i = 0; i < days.length; i++) {
@@ -112,6 +119,7 @@ class _ExpensesByDayChartState extends State<ExpensesByDayChart> {
       ));
     }
     // Calcular los valores mínimos y máximos
+    print('Calculating minimums and maximums');
     var minAmount = expensesByDay.map((e) => e['total'] as double).reduce(min);
     var maxAmount = expensesByDay.map((e) => e['total'] as double).reduce(max);
     double minY = min(0, minAmount);
@@ -198,6 +206,10 @@ class _ExpensesByDayChartState extends State<ExpensesByDayChart> {
 
   Widget buildChart(BuildContext context) {
     if (groups != null && days != null && minY != null && maxY != null) {
+      print('Building chart');
+      print(days);
+      print(minY);
+      print(maxY);
       return SizedBox(
         height: 300,
         child: BarChart(
