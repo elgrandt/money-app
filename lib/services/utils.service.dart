@@ -126,4 +126,22 @@ class UtilsService {
       );
     }) ?? false;
   }
+
+  List<T> filterList<T>(List<T> list, String query, String Function(T) key) {
+    if (query.isEmpty) return list;
+    return list.where((element) {
+      var field = key(element);
+      return normalizeString(field).contains(normalizeString(query));
+    }).toList();
+  }
+
+  String normalizeString(String string) {
+    return string
+      .toLowerCase()
+      .replaceAll('á', 'a')
+      .replaceAll('é', 'e')
+      .replaceAll('í', 'i')
+      .replaceAll('ó', 'o')
+      .replaceAll('ú', 'u');
+  }
 }

@@ -7,6 +7,7 @@ import 'package:money/models/account.model.dart';
 import 'package:money/services/utils.service.dart';
 import 'package:money/views/generics/easy_pie_chart.dart';
 import 'package:money/views/home/total_viewer.dart';
+import 'package:money/views/statistics/all_expenses.dart';
 import 'package:money/views/statistics/expenses_by_category.dart';
 import 'package:money/views/statistics/expenses_by_day.dart';
 
@@ -29,6 +30,10 @@ class Dashboard extends StatelessWidget {
         const Divider(),
         const SizedBox(height: 15),
         buildExpensesByDayChart(context),
+        const SizedBox(height: 15),
+        const Divider(),
+        const SizedBox(height: 15),
+        buildAllExpensesChart(context),
         const SizedBox(height: 100),
       ],
     );
@@ -73,6 +78,16 @@ class Dashboard extends StatelessWidget {
         Text('Movimientos por día', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold), textAlign: TextAlign.center),
         SizedBox(height: 20),
         ExpensesByDayChart(),
+      ],
+    );
+  }
+
+  Widget buildAllExpensesChart(BuildContext context) {
+    return const Column(
+      children: [
+        Text('Todos los gastos', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold), textAlign: TextAlign.center),
+        SizedBox(height: 20),
+        AllExpensesChart(),
       ],
     );
   }

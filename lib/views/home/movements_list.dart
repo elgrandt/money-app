@@ -15,8 +15,9 @@ import 'package:money/views/movements/movement_details.dialog.dart';
 class MovementsList extends StatefulWidget {
   final Account? account;
   final Currency currency;
+  final MovementType? movementTypeFilter;
 
-  const MovementsList({ super.key, required this.currency, this.account });
+  const MovementsList({ super.key, required this.currency, this.account, this.movementTypeFilter });
 
   @override
   State<MovementsList> createState() => MovementsListState();
@@ -26,6 +27,16 @@ class MovementsListState extends State<MovementsList> {
   List<Movement>? movements;
   var databaseService = GetIt.instance.get<DatabaseService>();
   EventListener<TableUpdateEvent<Movement>>? movementsListener;
+  String search = '';
+
+  get filteredMovements {
+    if (movements == null) return null;
+    var filtered = GetIt.instance.get<UtilsService>().filterList(movements!, search, (Movement movement) {
+      return '${movement.category}*****${movement.description}';
+    });
+    filtered = filtered.where((movement) => widget.movementTypeFilter == null || movement.type == widget.movementTypeFilter).toList();
+    return filtered;
+  }
 
   @override
   void initState() {
@@ -58,6 +69,7 @@ class MovementsListState extends State<MovementsList> {
     await databaseService.initialized;
     try {
       var movements = await databaseService.movementsRepository.getLastMovements(widget.account);
+      if (!mounted) return;
       setState(() {
         this.movements = movements;
       });
@@ -69,15 +81,32 @@ class MovementsListState extends State<MovementsList> {
   @override
   Widget build(BuildContext context) {
     return movements == null ? const Loader() :
-      movements!.isEmpty ? buildEmptyMessage(context) :
+      filteredMovements!.isEmpty ? buildEmptyMessage(context) :
       Expanded(
-        child: ListView.separated(
-          shrinkWrap: true,
-          itemCount: movements!.length,
-          scrollDirection: Axis.vertical,
-          padding: const EdgeInsets.only(bottom: 80),
-          itemBuilder: (BuildContext context, int index) => MovementListItem(movement: movements![index], currency: widget.currency, account: widget.account),
-          separatorBuilder: (BuildContext context, int index) => const Divider(height: 0),
+        child: Column(
+          children: [
+            Container(
+              padding: EdgeInsets.fromLTRB(20, 0, 20, 20),
+              child: CupertinoSearchTextField(
+                onChanged: (value) {
+                  setState(() {
+                    search = value;
+                  });
+                },
+              ),
+            ),
+            Expanded(
+              child: ListView.separated(
+                shrinkWrap: true,
+                itemCount: filteredMovements!.length,
+                scrollDirection: Axis.vertical,
+                padding: const EdgeInsets.only(bottom: 80),
+                itemBuilder: (BuildContext context, int index) => MovementListItem(movement: filteredMovements![index], currency: widget.currency, account: widget.account),
+                separatorBuilder: (BuildContext context, int index) => const Divider(height: 0),
+                keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
+              ),
+            ),
+          ],
         ),
       );
   }
@@ -152,10 +181,16 @@ class MovementListItem extends StatelessWidget {
               children: [
                 buildDescription(context),
                 const SizedBox(width: 20),
-                if (movement.source != null && movement.target != null)
-                  buildAccounts(context),
-                if ((movement.source == null || movement.target == null) && movement.creationDate != null)
-                  buildDate(context),
+                Column(
+                  mainAxisAlignment: MainAxisAlignment.end,
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  children: [
+                    if (movement.type == MovementType.TRANSFER)
+                      ...buildAccounts(context),
+                    if (movement.creationDate != null)
+                      buildDate(context),
+                  ],
+                ),
               ],
             ),
           ],
@@ -193,25 +228,21 @@ class MovementListItem extends StatelessWidget {
     );
   }
   
-  Widget buildAccounts(BuildContext context) {
-    return Column(
-      mainAxisAlignment: MainAxisAlignment.end,
-      crossAxisAlignment: CrossAxisAlignment.end,
-      children: [
-        movement.source != null ? Row(
-          children: [
-            Text(movement.source!.name, overflow: TextOverflow.ellipsis),
-            Icon(CupertinoIcons.arrow_down_right, size: 18, color: Colors.red.shade900),
-          ],
-        ) : Container(),
-        movement.target != null ? Row(
-          children: [
-            Text(movement.target!.name, overflow: TextOverflow.ellipsis),
-            Icon(CupertinoIcons.arrow_up_right, size: 18, color: Colors.green.shade900),
-          ],
-        ) : Container(),
-      ],
-    );
+  List<Widget> buildAccounts(BuildContext context) {
+    return [
+      movement.source != null ? Row(
+        children: [
+          Text(movement.source!.name, overflow: TextOverflow.ellipsis),
+          Icon(CupertinoIcons.arrow_down_right, size: 18, color: Colors.red.shade900),
+        ],
+      ) : Container(),
+      movement.target != null ? Row(
+        children: [
+          Text(movement.target!.name, overflow: TextOverflow.ellipsis),
+          Icon(CupertinoIcons.arrow_up_right, size: 18, color: Colors.green.shade900),
+        ],
+      ) : Container(),
+    ];
   }
 
   Widget buildDate(BuildContext context) {
