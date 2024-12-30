@@ -23,14 +23,16 @@ class ExpensesByCategoryChart extends StatefulWidget {
 class _ExpensesByCategoryChartState extends State<ExpensesByCategoryChart> {
   List<Map<String, Object?>>? expensesByCategory;
   MovementType selectedMovementType = MovementType.REMOVE;
-  String? selectedPeriod = 'month';
+  String? selectedPeriod = 'this-month';
   var databaseService = GetIt.instance.get<DatabaseService>();
   final colorSeed = 134;
-  bool showTotal = false;
+  String viewMode = Currency.USD.toString();
+  List<String> viewModes = [...Currency.values.map((currency) => currency.toString()), 'PERCENT'];
 
   @override
   void initState() {
     super.initState();
+    viewMode = widget.account?.currency.toString() ?? Currency.USD.toString();
     getExpensesByCategory();
   }
 
@@ -48,6 +50,8 @@ class _ExpensesByCategoryChartState extends State<ExpensesByCategoryChart> {
       startDate = DateTime.now().subtract(const Duration(days: 30));
     } else if (selectedPeriod == 'year') {
       startDate = DateTime.now().subtract(const Duration(days: 365));
+    } else if (selectedPeriod == 'this-month') {
+      startDate = DateTime(DateTime.now().year, DateTime.now().month);
     }
     var result = await databaseService.movementsRepository.getExpensesByCategory(widget.account, selectedMovementType, startDate);
     result.sort((a, b) => (b['total'] as double).compareTo(a['total'] as double));
@@ -84,8 +88,8 @@ class _ExpensesByCategoryChartState extends State<ExpensesByCategoryChart> {
   }
 
   Widget buildPeriodSelect(BuildContext context) {
-    var options = ['month', 'year', null];
-    var optionNames = ['1 mes', '1 año', 'Todos'];
+    var options = ['this-month', 'month', 'year', null];
+    var optionNames = ['Éste mes', '1 mes', '1 año', 'Todos'];
     return ButtonSelector(
       options: optionNames.map((e) => Text(e)).toList(),
       selectedIndex: options.indexOf(selectedPeriod),
@@ -124,6 +128,8 @@ class _ExpensesByCategoryChartState extends State<ExpensesByCategoryChart> {
       var map = expensesByCategory![i];
       rows.add(buildTableRow(context, map['category'] as String, map['total'] as double, colors[i]));
     }
+    double total = expensesByCategory!.map((map) => map['total'] as double).reduce((value, element) => value + element);
+    rows.add(buildTableRow(context, 'Total', total, Colors.transparent, showPercent: false));
     return Table(
       columnWidths: const {
         0: FixedColumnWidth(50),
@@ -135,9 +141,20 @@ class _ExpensesByCategoryChartState extends State<ExpensesByCategoryChart> {
     );
   }
 
-  TableRow buildTableRow(BuildContext context, String name, double total, Color color) {
-    var percent = total / expensesByCategory!.map((map) => map['total'] as double).reduce((value, element) => value + element) * 100;
-    var beautifulTotal = GetIt.instance.get<UtilsService>().beautifyCurrency(total, widget.account?.currency ?? Currency.USD);
+  TableRow buildTableRow(BuildContext context, String name, double total, Color color, {bool showPercent = true}) {
+    double percent;
+    if (showPercent) {
+      percent = total / expensesByCategory!.map((map) => map['total'] as double).reduce((value, element) => value + element) * 100;
+    } else {
+      percent = 0;
+    }
+    String text = '';
+    if (viewMode == 'PERCENT' && showPercent) {
+      text = '${ percent.toStringAsFixed(2) }%';
+    } else {
+      var currency = Currency.values.firstWhere((currency) => currency.toString() == viewMode, orElse: () => Currency.USD);
+      text = GetIt.instance.get<UtilsService>().beautifyCurrency(total, currency);
+    }
     return TableRow(
       children: [
         Center(
@@ -154,12 +171,13 @@ class _ExpensesByCategoryChartState extends State<ExpensesByCategoryChart> {
         GestureDetector(
           onTap: () {
             setState(() {
-              showTotal = !showTotal;
+              var currentIndex = viewModes.indexOf(viewMode);
+              viewMode = viewModes[(currentIndex + 1) % viewModes.length];
             });
           },
           child: Padding(
             padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-            child: Text(showTotal ? beautifulTotal : '${ percent.toStringAsFixed(2) }%', style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold), textAlign: TextAlign.end),
+            child: Text(text, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold), textAlign: TextAlign.end),
           ),
         ),
       ],
