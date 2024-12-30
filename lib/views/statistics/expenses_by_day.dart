@@ -204,7 +204,6 @@ class _ExpensesByDayChartState extends State<ExpensesByDayChart> {
           BarChartData(
             barTouchData: BarTouchData(
               touchTooltipData: BarTouchTooltipData(
-                tooltipBgColor: Colors.blueGrey,
                 tooltipHorizontalAlignment: FLHorizontalAlignment.center,
                 tooltipMargin: 0,
                 fitInsideVertically: true,

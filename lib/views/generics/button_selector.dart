@@ -1,4 +1,6 @@
 
+import 'dart:math';
+
 import 'package:flutter/material.dart';
 
 class ButtonSelector extends StatelessWidget {
@@ -6,23 +8,50 @@ class ButtonSelector extends StatelessWidget {
   final List<Widget> options;
   final void Function(int)? onSelectionChange;
   final void Function()? onAddButtonPressed;
+  final bool wrap;
 
-  const ButtonSelector({ super.key, this.selectedIndex, required this.options, this.onSelectionChange, this.onAddButtonPressed });
+  const ButtonSelector({ super.key, this.selectedIndex, required this.options, this.onSelectionChange, this.onAddButtonPressed, this.wrap = true });
 
   @override
   Widget build(BuildContext context) {
-    return Wrap(
-      alignment: WrapAlignment.spaceEvenly,
-      crossAxisAlignment: WrapCrossAlignment.center,
-      direction: Axis.horizontal,
-      spacing: 10,
-      runSpacing: 10,
-      children: [
-        ...buildOptionButtons(context),
-        if (onAddButtonPressed != null)
-          buildAddButton(context),
-      ],
-    );
+    if (wrap) {
+      return Wrap(
+        alignment: WrapAlignment.spaceEvenly,
+        crossAxisAlignment: WrapCrossAlignment.center,
+        direction: Axis.horizontal,
+        spacing: 10,
+        runSpacing: 10,
+        children: [
+          ...buildOptionButtons(context),
+          if (onAddButtonPressed != null)
+            buildAddButton(context),
+        ],
+      );
+    } else {
+      List<Widget> options = buildOptionButtons(context);
+      if (onAddButtonPressed != null) {
+        options.add(buildAddButton(context));
+      }
+      int rowCount = options.length > 2 ? 2 : 1;
+      int sliceSize = (options.length / rowCount.toDouble()).ceil();
+      List<List<Widget>> rows = [];
+      for (var i = 0; i < rowCount; i++) {
+        rows.add(options.sublist(i * sliceSize, min((i + 1) * sliceSize, options.length)));
+      }
+      return SingleChildScrollView(
+        scrollDirection: Axis.horizontal,
+        child: Column(
+          spacing: 10,
+          mainAxisAlignment: MainAxisAlignment.start,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: rows.map((columnItems) => Row(
+            spacing: 10,
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: columnItems,
+          )).toList(),
+        ),
+      );
+    }
   }
 
   List<Widget> buildOptionButtons(BuildContext context) {

@@ -178,6 +178,7 @@ class _NewMovementDialogState extends State<NewMovementDialog> {
   @override
   Widget build(BuildContext context) {
     return Dialog(
+      insetPadding: const EdgeInsets.all(10),
       alignment: Alignment.center,
       child: Form(
         key: _formKey,
@@ -392,6 +393,7 @@ class _NewMovementDialogState extends State<NewMovementDialog> {
         ButtonSelector(
           options: categories.map((category) => Text(category.name)).toList(),
           selectedIndex: categories.indexWhere((category) => category.name == selectedCategory),
+          wrap: false,
           onSelectionChange: (index) {
             setState(() {
               selectedCategory = categories[index].name;

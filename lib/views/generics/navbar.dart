@@ -66,6 +66,11 @@ class NavigationMenu extends StatelessWidget {
     await Navigator.of(context).pushNamed('/statistics');
   }
 
+  void goToBackups(BuildContext context) async {
+    Navigator.of(context).pop();
+    await Navigator.of(context).pushNamed('/backups');
+  }
+
   @override
   Widget build(BuildContext context) {
     return BackdropFilter(
@@ -97,6 +102,12 @@ class NavigationMenu extends StatelessWidget {
             padding: EdgeInsets.zero,
             onPressed: () => goToStatistics(context),
             child: const Text('Estadísticas', style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Colors.white)),
+          ),
+          const SizedBox(height: 20),
+          CupertinoButton(
+            padding: EdgeInsets.zero,
+            onPressed: () => goToBackups(context),
+            child: const Text('Backups', style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Colors.white)),
           ),
         ],
       ),

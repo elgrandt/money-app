@@ -158,7 +158,7 @@ class _MovementDetailsDialogState extends State<MovementDetailsDialog> {
         ElevatedButton(
           onPressed: () => openDeleteMovementConfirmationDialog(),
           style: ElevatedButton.styleFrom(
-            primary: Theme.of(context).colorScheme.error,
+            backgroundColor: Theme.of(context).colorScheme.error,
             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(100)),
             padding: const EdgeInsets.symmetric(horizontal: 30, vertical: 10),
           ),

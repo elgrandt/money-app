@@ -5,6 +5,7 @@ import 'package:logger/logger.dart';
 import 'package:money/services/database.service.dart';
 import 'package:money/services/utils.service.dart';
 import 'package:money/views/accounts/account_list.dart';
+import 'package:money/views/backups/backups.dart';
 import 'package:money/views/categories/category_list.dart';
 import 'package:money/views/home/home.dart';
 import 'package:money/views/statistics/statistics.dart';
@@ -56,6 +57,7 @@ class MoneyApp extends StatelessWidget {
         '/accounts': (context) => const AccountList(),
         '/categories': (context) => const CategoryList(),
         '/statistics': (context) => const Statistics(),
+        '/backups': (context) => const Backups(),
       },
     );
   }
