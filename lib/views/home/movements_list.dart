@@ -123,11 +123,17 @@ class MovementListItem extends StatelessWidget {
   final Account? account;
 
   get amount {
+    double amountOnTarget;
+    Currency currencyFrom;
     if (movement.conversionRate != null && account?.id == movement.target?.id) {
-      return movement.conversionRate! * movement.amount;
+      amountOnTarget = movement.conversionRate! * movement.amount;
+      currencyFrom = movement.target!.currency;
     } else {
-      return movement.amount;
+      amountOnTarget = movement.amount;
+      currencyFrom = movement.source?.currency ?? movement.target?.currency ?? Currency.USD;
     }
+    var utilsService = GetIt.instance.get<UtilsService>();
+    return utilsService.convertCurrencies(amountOnTarget, currencyFrom, currency);
   }
 
   const MovementListItem({ super.key, required this.movement, required this.currency, this.account });
@@ -213,7 +219,7 @@ class MovementListItem extends StatelessWidget {
   Widget buildAmount(BuildContext context) {
     var utilsService = GetIt.instance.get<UtilsService>();
     return Text(
-      utilsService.beautifyCurrency(utilsService.convertCurrencies(amount, account?.currency ?? currency, currency), currency),
+      utilsService.beautifyCurrency(amount, currency),
       overflow: TextOverflow.visible,
       style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: getMovementTypeColor(movement.type))
     );
