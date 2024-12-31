@@ -12,8 +12,9 @@ class Account extends BaseModel {
   double total;
   Currency currency;
   int sortIndex;
+  bool showTotal = false;
 
-  Account({ required this.name, required this.total, required this.currency, required this.sortIndex, super.id });
+  Account({ required this.name, required this.total, required this.currency, required this.sortIndex, this.showTotal = false, super.id });
 
   @override
   String toString() {

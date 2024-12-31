@@ -10,6 +10,7 @@ class AccountsRepository extends BaseRepository<Account> {
     DatabaseColumnDefinition('total', DatabaseColumnType.REAL),
     DatabaseColumnDefinition('currency', DatabaseColumnType.TEXT),
     DatabaseColumnDefinition('sortIndex', DatabaseColumnType.INTEGER),
+    DatabaseColumnDefinition('showTotal', DatabaseColumnType.INTEGER),
   ];
 
   AccountsRepository(Database db): super(db, 'accounts', AccountsRepository.accountColumns);
@@ -24,6 +25,7 @@ class AccountsRepository extends BaseRepository<Account> {
     map['total'] = model.total;
     map['currency'] = model.currency.name;
     map['sortIndex'] = model.sortIndex;
+    map['showTotal'] = model.showTotal ? 1 : 0;
     return map;
   }
 
@@ -34,7 +36,8 @@ class AccountsRepository extends BaseRepository<Account> {
       total: map['total'] as double,
       currency: Currency.values.byName(map['currency'] as String),
       id: map['id'] as int?,
-      sortIndex: map['sortIndex'] as int
+      sortIndex: map['sortIndex'] as int,
+      showTotal: map['showTotal'] == 1,
     );
   }
 
@@ -42,6 +45,16 @@ class AccountsRepository extends BaseRepository<Account> {
     var account = await findById(id);
     if (account != null) {
       account.total += amount;
+      await update(account);
+    } else {
+      throw Exception('Account not found');
+    }
+  }
+
+  Future<void> switchShowTotal(int id) async {
+    var account = await findById(id);
+    if (account != null) {
+      account.showTotal = !account.showTotal;
       await update(account);
     } else {
       throw Exception('Account not found');

@@ -2,9 +2,8 @@
 import 'package:flutter/material.dart';
 import 'package:get_it/get_it.dart';
 import 'package:money/models/account.model.dart';
+import 'package:money/services/database.service.dart';
 import 'package:money/services/utils.service.dart';
-
-Map<int, bool> visibilitiesByAccount = {};
 
 class TotalViewer extends StatefulWidget {
   final Account? account;
@@ -19,14 +18,19 @@ class TotalViewer extends StatefulWidget {
 }
 
 class _TotalViewerState extends State<TotalViewer> {
-  bool visible = false;
+  bool _visible = false;
+
+  get visible {
+    if (widget.account != null) {
+      return widget.account!.showTotal;
+    } else {
+      return _visible;
+    }
+  }
 
   @override
   void initState() {
     super.initState();
-    if (visibilitiesByAccount.containsKey(widget.account?.id ?? -1)) {
-      visible = visibilitiesByAccount[widget.account?.id ?? -1]!;
-    }
   }
 
   String totalString() {
@@ -48,10 +52,14 @@ class _TotalViewerState extends State<TotalViewer> {
   }
 
   switchVisible() {
-    setState(() {
-      visible = !visible;
-      visibilitiesByAccount[widget.account?.id ?? -1] = visible;
-    });
+    if (widget.account == null) {
+      setState(() {
+        _visible = !_visible;
+      });
+    } else {
+      var databaseService = GetIt.instance.get<DatabaseService>();
+      databaseService.accountsRepository.switchShowTotal(widget.account!.id!);
+    }
   }
 
   @override
