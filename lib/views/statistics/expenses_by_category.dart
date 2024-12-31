@@ -25,6 +25,7 @@ class _ExpensesByCategoryChartState extends State<ExpensesByCategoryChart> {
   MovementType selectedMovementType = MovementType.REMOVE;
   String? selectedPeriod = 'this-month';
   var databaseService = GetIt.instance.get<DatabaseService>();
+  var utilsService = GetIt.instance.get<UtilsService>();
   final colorSeed = 134;
   String viewMode = Currency.USD.toString();
   List<String> viewModes = [...Currency.values.map((currency) => currency.toString()), 'PERCENT'];
@@ -142,18 +143,14 @@ class _ExpensesByCategoryChartState extends State<ExpensesByCategoryChart> {
   }
 
   TableRow buildTableRow(BuildContext context, String name, double total, Color color, {bool showPercent = true}) {
-    double percent;
-    if (showPercent) {
-      percent = total / expensesByCategory!.map((map) => map['total'] as double).reduce((value, element) => value + element) * 100;
-    } else {
-      percent = 0;
-    }
     String text = '';
     if (viewMode == 'PERCENT' && showPercent) {
+      var percent = total / expensesByCategory!.map((map) => map['total'] as double).reduce((value, element) => value + element) * 100;
       text = '${ percent.toStringAsFixed(2) }%';
     } else {
       var currency = Currency.values.firstWhere((currency) => currency.toString() == viewMode, orElse: () => Currency.USD);
-      text = GetIt.instance.get<UtilsService>().beautifyCurrency(total, currency);
+      total = utilsService.convertCurrencies(total, widget.account?.currency ?? Currency.USD, currency);
+      text = utilsService.beautifyCurrency(total, currency);
     }
     return TableRow(
       children: [

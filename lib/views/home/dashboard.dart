@@ -18,29 +18,34 @@ class Dashboard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return ListView(
-      children: [
-        buildTotal(context),
-        buildTotalsChart(context),
-        const SizedBox(height: 15),
-        const Divider(),
-        const SizedBox(height: 15),
-        buildExpensesByCategoryChart(context),
-        const SizedBox(height: 15),
-        const Divider(),
-        const SizedBox(height: 15),
-        buildExpensesByDayChart(context),
-        const SizedBox(height: 15),
-        const Divider(),
-        const SizedBox(height: 15),
-        buildAllExpensesChart(context),
-        const SizedBox(height: 100),
-      ],
+    return SingleChildScrollView(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          const SizedBox(height: 15),
+          buildTotal(context),
+          buildTotalsChart(context),
+          const SizedBox(height: 15),
+          const Divider(),
+          const SizedBox(height: 15),
+          buildAllExpensesChart(context),
+          const SizedBox(height: 15),
+          const Divider(),
+          const SizedBox(height: 15),
+          buildExpensesByCategoryChart(context),
+          const SizedBox(height: 15),
+          const Divider(),
+          const SizedBox(height: 15),
+          buildExpensesByDayChart(context),
+          const SizedBox(height: 100),
+        ],
+      ),
     );
   }
 
   Widget buildTotal(BuildContext context) {
     return Column(
+      key: Key('total'),
       children: [
         const SizedBox(height: 10),
         const Text('Patrimonio total', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold), textAlign: TextAlign.center),
@@ -51,19 +56,21 @@ class Dashboard extends StatelessWidget {
 
   Widget buildTotalsChart(BuildContext context) {
     return EasyPieChart(
+      key: Key('totals-chart'),
       labelPosition: LabelPosition.bottom,
       randomGenerator: Random(124),
       items: accounts,
       label: (account) => account.name,
       value: (account) => max(GetIt.instance.get<UtilsService>().convertCurrencies(account.total, account.currency, Currency.USD) , 0),
-      maxWidth: 200,
-      maxHeight: 200,
+      maxWidth: 150,
+      maxHeight: 150,
       maxLabelWidth: 200,
     );
   }
 
   Widget buildExpensesByCategoryChart(BuildContext context) {
     return const Column(
+      key: Key('expenses-by-category'),
       children: [
         Text('Movimientos por categoría', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold), textAlign: TextAlign.center),
         SizedBox(height: 20),
@@ -74,6 +81,7 @@ class Dashboard extends StatelessWidget {
 
   Widget buildExpensesByDayChart(BuildContext context) {
     return const Column(
+      key: Key('expenses-by-day'),
       children: [
         Text('Movimientos por día', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold), textAlign: TextAlign.center),
         SizedBox(height: 20),
@@ -84,8 +92,9 @@ class Dashboard extends StatelessWidget {
 
   Widget buildAllExpensesChart(BuildContext context) {
     return const Column(
+      key: Key('all-expenses'),
       children: [
-        Text('Todos los gastos', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold), textAlign: TextAlign.center),
+        Text('Últimos movimientos', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold), textAlign: TextAlign.center),
         SizedBox(height: 20),
         AllExpensesChart(),
       ],

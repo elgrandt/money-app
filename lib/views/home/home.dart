@@ -110,7 +110,7 @@ class _HomeState extends State<Home> {
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(100)),
         child: const Icon(Icons.add, color: Colors.white),
       ) : null,
-      body: accounts == null ? const Loader() : accounts!.isEmpty ? buildWelcomePage(context) : buildTabs(context),
+      body: accounts == null || !initializedCurrencies ? const Loader() : accounts!.isEmpty ? buildWelcomePage(context) : buildTabs(context),
     );
   }
 

@@ -11,6 +11,7 @@ import 'package:money/services/database.service.dart';
 import 'package:money/services/utils.service.dart';
 import 'package:money/views/generics/loader.dart';
 import 'package:money/views/movements/movement_details.dialog.dart';
+import 'dart:async';
 
 class MovementsList extends StatefulWidget {
   final Account? account;
@@ -81,7 +82,6 @@ class MovementsListState extends State<MovementsList> {
   @override
   Widget build(BuildContext context) {
     return movements == null ? const Loader() :
-      filteredMovements!.isEmpty ? buildEmptyMessage(context) :
       Expanded(
         child: Column(
           children: [
@@ -95,6 +95,7 @@ class MovementsListState extends State<MovementsList> {
                 },
               ),
             ),
+            filteredMovements!.isEmpty ? buildEmptyMessage(context) :
             Expanded(
               child: ListView.separated(
                 shrinkWrap: true,
