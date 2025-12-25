@@ -216,6 +216,10 @@ abstract class BaseRepository<Model extends BaseModel> {
     return Sqflite.firstIntValue(result) ?? 0;
   }
 
+  Future<void> deleteAll() async {
+    await db.delete(tableName);
+  }
+
   Map<String, Object?> modelToMap(Model model);
 
   Model mapToModel(Map<String, Object?> map);

@@ -6,10 +6,13 @@ import 'package:money/models/account.model.dart';
 import 'package:money/repositories/base.repository.dart';
 import 'package:money/services/database.service.dart';
 import 'package:money/views/generics/navbar.dart';
+import 'package:money/services/utils.service.dart';
 import 'package:path_provider/path_provider.dart';
 
 class Backups extends StatelessWidget {
-  const Backups({super.key});
+  var utilsService = GetIt.instance.get<UtilsService>();
+
+  Backups({super.key});
 
   saveBackup(BuildContext context) async {
     var dir = await getApplicationDocumentsDirectory();
@@ -36,6 +39,15 @@ class Backups extends StatelessWidget {
     GetIt.instance.get<DatabaseService>().accountsRepository.events.emit('change', TableUpdateEvent<Account>(TableUpdateEventType.UPDATE, 0)); // Emit fake event to refresh accounts
   }
 
+  openDeleteDataConfirmationDialog(BuildContext context) async {
+    var result = await utilsService.confirm(context, title: 'Eliminar todos los datos', message: '¿Estás seguro que deseas eliminar todos los datos de la aplicación?\nEsta acción no se puede deshacer, se recomienda realizar un backup antes de continuar.');
+    if (result == true) {
+      await GetIt.instance.get<DatabaseService>().deleteAllData();
+      if (!context.mounted) return;
+      Navigator.of(context).pushNamedAndRemoveUntil('/', (Route<dynamic> route) => false);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Navbar(
@@ -56,6 +68,12 @@ class Backups extends StatelessWidget {
               padding: EdgeInsets.zero,
               onPressed: () => restoreBackup(context),
               child: const Text('Restaurar backup', style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
+            ),
+            const SizedBox(height: 20),
+            CupertinoButton(
+              padding: EdgeInsets.zero,
+              onPressed: () => openDeleteDataConfirmationDialog(context),
+              child: const Text('Eliminar todos los datos', style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: CupertinoColors.destructiveRed)),
             ),
           ],
         ),

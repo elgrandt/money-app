@@ -65,4 +65,11 @@ class DatabaseService {
     _initializedCompleter.complete();
     _logger.i('Finished database initialization');
   }
+
+  Future<void> deleteAllData() async {
+    await movementsRepository.deleteAll();
+    await accountsRepository.deleteAll();
+    await categoriesRepository.deleteAll();
+    // Add new repositories here
+  }
 }

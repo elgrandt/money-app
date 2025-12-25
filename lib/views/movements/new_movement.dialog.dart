@@ -42,7 +42,7 @@ class _NewMovementDialogState extends State<NewMovementDialog> {
   List<Account>? accounts;
 
   final amountInputController = MoneyMaskedTextController(decimalSeparator: ',', thousandSeparator: '.', precision: 2, initialValue: 0);
-  final conversionRateInputController = MoneyMaskedTextController(decimalSeparator: ',', thousandSeparator: '.', precision: 2, initialValue: 1);
+  final conversionRateInputController = MoneyMaskedTextController(decimalSeparator: ',', thousandSeparator: '.', precision: 6, initialValue: 1);
   final descriptionInputController = TextEditingController();
   var databaseService = GetIt.instance.get<DatabaseService>();
   var utilsService = GetIt.instance.get<UtilsService>();
@@ -338,7 +338,7 @@ class _NewMovementDialogState extends State<NewMovementDialog> {
               value = value.replaceAll('.', '');
               value = value.replaceAll(' ', '');
               if (double.tryParse(value) != null) {
-                conversionRate = double.tryParse(value)! / 100;
+                conversionRate = double.tryParse(value)! / 1000000;
               }
             });
           },

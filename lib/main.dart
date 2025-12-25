@@ -57,7 +57,7 @@ class MoneyApp extends StatelessWidget {
         '/accounts': (context) => const AccountList(),
         '/categories': (context) => const CategoryList(),
         '/statistics': (context) => const Statistics(),
-        '/backups': (context) => const Backups(),
+        '/backups': (context) => Backups(),
       },
     );
   }
