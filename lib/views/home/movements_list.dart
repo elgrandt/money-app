@@ -29,6 +29,7 @@ class MovementsListState extends State<MovementsList> {
   var databaseService = GetIt.instance.get<DatabaseService>();
   EventListener<TableUpdateEvent<Movement>>? movementsListener;
   String search = '';
+  var logger = GetIt.instance.get<Logger>();
 
   get filteredMovements {
     if (movements == null) return null;
@@ -43,6 +44,7 @@ class MovementsListState extends State<MovementsList> {
   void initState() {
     super.initState();
     getMovements();
+    watchMovementChanges();
   }
 
   @override
@@ -62,6 +64,7 @@ class MovementsListState extends State<MovementsList> {
   Future<void> watchMovementChanges() async {
     await databaseService.initialized;
     movementsListener = databaseService.movementsRepository.events.on<TableUpdateEvent<Movement>>('change', (event) {
+      logger.d('Movement change: $event');
       getMovements();
     });
   }
