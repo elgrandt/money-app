@@ -205,6 +205,15 @@ abstract class BaseRepository<Model extends BaseModel> {
     return result;
   }
 
+  Future<int> deleteMany(List<int> ids) async {
+    var idsPlaceholders = List.filled(ids.length, '?').join(',');
+    var result = await db.delete(tableName, where: 'id IN ($idsPlaceholders)', whereArgs: ids);
+    for (var id in ids) {
+      events.emit('change', DeleteEvent<Model>(id));
+    }
+    return result;
+  }
+
   Future<int> update(Model model) async {
     var result = await db.update(tableName, modelToMap(model), where: 'id = ?', whereArgs: [model.id]);
     events.emit('change', UpdateEvent(model.id!, model));

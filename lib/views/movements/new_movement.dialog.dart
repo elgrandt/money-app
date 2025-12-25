@@ -170,7 +170,7 @@ class _NewMovementDialogState extends State<NewMovementDialog> {
       creationDate = movement.creationDate ?? DateTime.now();
       descriptionInputController.text = movement.description;
       conversionRate = movement.conversionRate ?? 1;
-      conversionRateInputController.text = conversionRate.toStringAsFixed(2);
+      conversionRateInputController.text = conversionRate.toStringAsFixed(6);
       selectedCategory = movement.category;
     });
   }
@@ -243,10 +243,12 @@ class _NewMovementDialogState extends State<NewMovementDialog> {
   }
 
   Widget buildSourceSelect(BuildContext context) {
+    var index = accounts!.indexOf(source);
+    index = index == -1 ? 0 : index;
     return CupertinoSelect(
       label: 'Desde',
       options: accounts!.map((e) => e.name).toList(),
-      selectedIndex: accounts!.indexOf(source),
+      selectedIndex: index,
       onSelectedIndexChange: (index) {
         setState(() {
           source = accounts![index];
@@ -256,10 +258,12 @@ class _NewMovementDialogState extends State<NewMovementDialog> {
   }
 
   Widget buildTargetSelect(BuildContext context) {
+    var index = accounts!.indexOf(source);
+    index = index == -1 ? 0 : index;
     return CupertinoSelect(
       label: 'Hacia',
       options: accounts!.map((account) => account.name).toList(),
-      selectedIndex: accounts!.indexOf(target),
+      selectedIndex: index,
       onSelectedIndexChange: (index) {
         setState(() {
           target = accounts![index];

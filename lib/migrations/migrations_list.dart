@@ -1,5 +1,6 @@
 
 import 'package:money/migrations/accounts_initialization.migration.dart';
+import 'package:money/migrations/add_deleted_field_to_account.migration.dart';
 import 'package:money/migrations/add_order_field_to_account.migration.dart';
 import 'package:money/migrations/add_showTotal_field_to_account.migration.dart';
 import 'package:money/migrations/categories_initialization.migration.dart';
@@ -14,4 +15,5 @@ List<MigrationDefinition> migrationDefinitions = [
   categoriesInitializationMigration,
   addSortIndexFieldToAccountMigration,
   addShowTotalFieldToAccountMigration,
+  addDeletedFieldToAccountMigration,
 ];
