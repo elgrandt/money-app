@@ -258,7 +258,7 @@ class _NewMovementDialogState extends State<NewMovementDialog> {
   }
 
   Widget buildTargetSelect(BuildContext context) {
-    var index = accounts!.indexOf(source);
+    var index = accounts!.indexOf(target);
     index = index == -1 ? 0 : index;
     return CupertinoSelect(
       label: 'Hacia',
