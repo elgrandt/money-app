@@ -90,7 +90,7 @@ class UtilsService {
     var formatter = NumberFormat.currency(locale: 'es_AR', name: currency.name, symbol: getCurrencySymbol(currency));
     formatter.minimumIntegerDigits = 1;
     formatter.minimumFractionDigits = 0;
-    formatter.maximumFractionDigits = 2;
+    formatter.maximumFractionDigits = 0;
     return formatter.format(number);
   }
 
