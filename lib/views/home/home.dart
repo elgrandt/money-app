@@ -18,13 +18,6 @@ import 'package:money/views/home/movements_list.dart';
 import 'package:money/views/home/total_viewer.dart';
 import 'package:money/views/movements/new_movement.dialog.dart';
 
-/*
-TODO
-- Edit accounts
-- Transfer currency exchange rate
-- Add account total functionality
-*/
-
 class Home extends StatefulWidget {
   const Home({super.key});
 
