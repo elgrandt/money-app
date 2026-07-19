@@ -107,3 +107,35 @@ Never commit directly to `master`. All work happens on a feature branch named
 `feature/<short-description>` (kebab-case, e.g. `feature/edit-accounts`). Before committing
 anything, confirm you are on the feature branch and not on `master`; if you are on `master`,
 create or switch to the feature branch first.
+
+### Commit messages
+
+Written in English (like the rest of the code). The summary line is an **imperative,
+capitalized phrase with no type prefix** (classic Git style), kept short (~50 characters) and
+with no trailing period:
+
+```text
+Add account editing
+Update dashboard after movement edit
+Add setup instructions to README
+Extract statistics chart builders
+Update android build config
+```
+
+When a change needs explanation, add a blank line and a body that describes the **why**, not
+the what:
+
+```text
+Update dashboard after movement edit
+
+Movement edits weren't emitting a change event, so the dashboard kept
+showing stale balances until reload.
+```
+
+When a commit is made by an AI assistant on request, append the co-author trailer it was told
+to use, e.g. `Co-Authored-By: Claude ... <noreply@anthropic.com>`.
+
+### PR titles
+
+Same style as the commit summary — an imperative, capitalized, prefix-free phrase describing
+the branch as a whole, e.g. `Add account editing`. The PR description explains what and why.
