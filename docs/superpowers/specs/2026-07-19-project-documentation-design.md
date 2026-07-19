@@ -168,10 +168,20 @@ The layers; how `main.dart` boots (`runApp` → logger → services → database
 - **File naming:** suffix convention `*.model.dart`, `*.repository.dart`, `*.service.dart`,
   `*.migration.dart`, `*.dialog.dart`; screens are `<name>.dart`; snake_case filenames;
   one feature = one folder under `views/`.
-- **File-size guideline:** keep files roughly **under ~500 lines**; when a file grows past
-  that, that's a signal to split. Multiple **related** classes in one file are fine and
-  expected (e.g. `movements_list.dart` holds `MovementsList` + `MovementListItem`;
+- **File-size guideline:** ~500 lines is a **soft signal, not a hard limit**. A file at 502
+  or 600 lines is fine when the content is cohesive and can't be split cleanly (e.g. a large
+  view). Treat crossing ~500 as a prompt to *ask* "can this be split sensibly?" — split when
+  it can, leave it when a split would be artificial. Multiple **related** classes in one file
+  are fine and expected (e.g. `movements_list.dart` holds `MovementsList` + `MovementListItem`;
   `navbar.dart` holds `Navbar` + `NavigationMenu`).
+- **Prefer generalization:** when a widget or helper looks like it could be reusable, build it
+  as a generic from the start — even if there is no second use site yet. Generic widgets live
+  in `lib/views/generics/` (e.g. `ButtonSelector`, `CupertinoSelect`, `EasyPieChart`, `Tabs`,
+  `Loader`, `Navbar`), generic helpers in a service (e.g. `UtilsService.filterList`,
+  `normalizeString`, `confirm`). Generics are parameterized via constructor callbacks/typedefs
+  and generics (`EasyPieChart<T>`, `filterList<T>`), and must not depend on feature-specific
+  models or state. If generalizing would force awkward abstraction, keep it local — but the
+  default leans toward extracting a reusable component.
 - **Language rule:** English code identifiers **and log messages**, Spanish UI strings. Code
   that violates this (e.g. Spanish logs) is tech debt, not a pattern to copy.
 - **DI rule:** always cache `GetIt.instance.get<X>()` in a field on the class; do not call it
@@ -263,26 +273,73 @@ Depth = **functional + key code references**. Each doc covers:
 
 ### tech-debt.md
 
+`tech-debt.md` enumerates **every existing place** that does not match the patterns defined in
+these docs, so the debt is trackable and can be paid down incrementally. It is produced from a
+full audit of `lib/` and must be kept current as code changes (per the docs-maintenance rule).
+The list below is that audit as of 2026-07-19.
+
 Dead files (deleted this session):
+
 - `dmmf.json` (leftover Prisma schema, unused).
 - Empty `db.sqlite` and `package.json` / `package-lock.json` (node leftovers).
 - Stale `test/widget_test.dart` (doesn't match the app).
 
-Documented only (left untouched this session):
-- Hardcoded `EURtoUSD = 1.11` in `utils.service.dart` — no EUR→USD API was found at the time;
-  revisit later.
-- Three Spanish log strings in `database.service.dart` (`'Creando tablas'`,
-  `'Conectado a la base de datos'`, `'Error conectado a la base de datos'`) violate the
-  EN-logs rule.
-- Unused codegen dependencies (`json_serializable`, `json_annotation`, `build_runner`).
-- Files that start with a leading blank line and/or have blank lines between imports (violate
-  the formatting rule).
-- Missing `mounted`/`context.mounted` guards after `await` before `setState` — e.g.
-  `account_list.dart` `getAccounts`, `statistics.dart` `getAccounts`.
-- Inline `GetIt.instance.get<…>()` not cached in a field — e.g. `movements_list.dart:138`,
-  `dashboard.dart`.
-- String interpolations without inner spaces where the rule now requires `${ expr }`.
-- Empty `initState` that only calls `super.initState()` — e.g. `total_viewer.dart`.
+Behavior / config debt (documented only):
+
+- Hardcoded `EURtoUSD = 1.11` in `utils.service.dart:67` — no EUR→USD API was found at the
+  time; revisit later.
+- Unused codegen dependencies in `pubspec.yaml`: `json_serializable`, `json_annotation`,
+  `build_runner` (nothing uses them; models are hand-written).
+
+Language-rule violations (English code + logs, Spanish UI):
+
+- Spanish log messages — `database.service.dart:34` (`'Creando tablas'`), `:46`
+  (`'Conectado a la base de datos'`), `:50` (`'Error conectado a la base de datos'`).
+- Spanish code comments — `expenses_by_day.dart:70`, `:89`, `:96`, `:114`.
+
+Formatting-rule violations:
+
+- **Leading blank line at top of file** (rule: never) — 39 files: everything under `lib/`
+  *except* `main.dart`, `home.dart`, `movements_list.dart`, `all_expenses.dart`,
+  `backups.dart`. (The tech-debt.md will list the 39 explicitly.)
+- **Blank line inside the import block** (rule: none) — `database.service.dart:3`,
+  `utils.service.dart:3`, `button_selector.dart:3`, `easy_pie_chart.dart:3`, `navbar.dart:3`,
+  `dashboard.dart:3`, `expenses_by_category.dart:3`, `expenses_by_day.dart:3`.
+- **Tight `${x}` interpolation** (rule: always `${ x }`) — `movements.repository.dart:82`,
+  `:83`; `base.repository.dart:81`, `:84`, `:105`, `:140`; `movement.model.dart:30`;
+  `easy_pie_chart.dart:34`; `utils.service.dart:20`; `movement_details.dialog.dart:145`;
+  `movements_list.dart:37`; `new_movement.dialog.dart:317`.
+- **Spaced braces around a lone `super.key`** (rule: tight `{super.key}`) — `navbar.dart:47`,
+  `category_list.dart:16`.
+
+Comment-policy violations (rule: minimal, self-documenting code):
+
+- Narration comments — `cupertino_select.dart:13`, `:20`, `:24`, `:26`, `:55`, `:59`
+  (copied from the Flutter sample); `account_list.dart:127`; `category_list.dart:121`.
+
+Coding-style / state-pattern violations:
+
+- **Missing `mounted`/`context.mounted` guard after `await` before `setState`** —
+  `account_list.dart:41` (`getAccounts`), `statistics.dart:33` (`getAccounts`),
+  `category_list.dart:44` (`getCategories`), `new_movement.dialog.dart:101` (`getCategories`)
+  & `:110` (`getAccounts`), `home.dart:59` (`initializeCurrencies`) & `:66` (`getAccounts`),
+  `expenses_by_category.dart:48` (`getExpensesByCategory`), `expenses_by_day.dart:50`
+  (`getExpensesByDay` → `doCalculations`).
+- **Inline `GetIt.instance.get<…>()` not cached in a field** — views: `currency_selector.dart:24`,
+  `dashboard.dart:64`, `total_viewer.dart:37/48/60`, `movements_list.dart:36/81/138/223`,
+  `home.dart:60`, `expenses_by_day.dart:318/348`, `backups.dart:39/45`; repositories:
+  `movements.repository.dart:152/166/197/228` (re-fetch despite an existing field / no
+  `utilsService` field), `base.repository.dart:166`. (Migration files legitimately use
+  top-level/local `GetIt` access — that is the migration structure, not a violation.)
+- **Empty `initState` that only calls `super.initState()`** — `total_viewer.dart:32`.
+- **Missing `void` return type on overrides** — `statistics.dart:28` (`initState`),
+  `movements_list.dart:57` (`didUpdateWidget`).
+- **Stray double semicolon** — `category_list.dart:95` (`);;`).
+
+Not a violation (recorded to avoid re-flagging):
+
+- **File size** — no file exceeds the ~500-line guideline; largest is
+  `new_movement.dialog.dart` (440 lines).
 
 ### Root README.md
 
