@@ -215,6 +215,19 @@ Method ordering inside a class:
 - `buildX()` sub-widget methods appear in the order they are used within `build`.
 - Untyped getters for computed values (`get canSubmit { … }`).
 
+Build decomposition:
+- **Keep `build` simple and descriptive** — it should read as a high-level composition of the
+  screen's sections, not a deep inline widget tree.
+- Extract a `buildX(context)` method for a section when it is **large** or when a name makes
+  the structure clearer **semantically** (e.g. `buildTitle`, `buildContent`,
+  `buildActionButtons` in dialogs; `buildTotal`, `buildTotalsChart`, `buildAllExpensesChart`
+  in `dashboard.dart`). This is not limited to list-item iteration.
+- **Don't over-extract:** trivial widgets (a `SizedBox` spacer, a one-line `Text`, a small
+  inline child) stay inline — a `buildX` per spacing would add noise, not clarity. Use
+  judgment; extract when it earns its name.
+- A `buildX()` returns a `Widget`, or `List<Widget>` (spread with `...`) when the section is a
+  group of siblings (e.g. `buildAccounts`, `buildConversionRateSection`).
+
 Naming:
 - Data fetch = `getX()`; event subscription = `watchXChanges()`; listener field = `xListener`;
   dialog opener = `openXDialog()`; navigation = `goToX(context)`; sub-widget builder =
