@@ -18,6 +18,7 @@
 - **Feature-doc depth:** functional + key code references — what it does, data model, key repository methods (with file:line), views involved, edge cases. NOT exhaustive method-by-method dumps.
 - **Honesty:** document reality; route intentional patterns to conventions/coding-style/ui-patterns and known issues to `tech-debt.md`.
 - **No behavior changes:** the only code touched is deleting dead files and removing the TODO comment block in `home.dart`.
+- **Git workflow:** all work is on the `feature/project-documentation` branch — never commit to `master`. Confirm the current branch is the feature branch before every commit.
 - **Commits:** one commit per task; end every commit message with `Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>`.
 
 ---
@@ -185,6 +186,7 @@ Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>"
   - **DI rule:** always cache `GetIt.instance.get<X>()` in a field; never inline in build/getters.
   - **Denormalized balance rule:** `Account.total` is stored, not computed; adjust it on every account-affecting change. Cite [movements.repository.dart:140-177](../../lib/repositories/movements.repository.dart#L140-L177) and [accounts.repository.dart:52-60](../../lib/repositories/accounts.repository.dart#L52-L60).
   - **No-tests policy.**
+  - **Git workflow:** never commit to `master`; work on a `feature/<short-description>` (kebab-case) branch; confirm you're on the feature branch before committing.
   - **Soft-delete** for accounts (`deleted` flag); cite [accounts.repository.dart:72-101](../../lib/repositories/accounts.repository.dart#L72-L101).
   - **Enums stored as TEXT via `.name`; booleans as `1/0`.**
 

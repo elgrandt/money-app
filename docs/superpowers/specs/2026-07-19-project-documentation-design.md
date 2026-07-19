@@ -190,6 +190,10 @@ The layers; how `main.dart` boots (`runApp` → logger → services → database
   on every account-affecting change (see `movementsRepository.create()` / `remove()`). This
   is a deliberate performance choice.
 - **No-tests policy:** the project does not write automated tests.
+- **Git workflow:** never commit directly to `master`. All work happens on a feature branch
+  named `feature/<short-description>` (kebab-case). Always confirm you are on the feature
+  branch (not `master`) before committing anything; if you're on `master`, create/switch to
+  the feature branch first.
 - Soft-delete pattern for accounts (`deleted` flag).
 - Enums stored as TEXT via `.name`; booleans as `1/0`.
 
