@@ -96,6 +96,7 @@ class UtilsService {
         eurToUsd: eurToUsd,
         updatedAt: DateTime.now(),
       ));
+      logger.d('Currency mappings updated successfully');
     } catch (error, stackTrace) {
       logger.e('Error updating currency mappings', error: error, stackTrace: stackTrace);
     }
