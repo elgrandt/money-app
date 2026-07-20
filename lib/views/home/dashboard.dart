@@ -4,6 +4,7 @@ import 'package:get_it/get_it.dart';
 import 'package:money/models/account.model.dart';
 import 'package:money/services/utils.service.dart';
 import 'package:money/views/generics/easy_pie_chart.dart';
+import 'package:money/views/home/exchange_rates.dart';
 import 'package:money/views/home/total_viewer.dart';
 import 'package:money/views/statistics/all_expenses.dart';
 import 'package:money/views/statistics/expenses_by_category.dart';
@@ -31,6 +32,10 @@ class Dashboard extends StatelessWidget {
           const Divider(),
           const SizedBox(height: 15),
           buildExpensesByCategoryChart(context),
+          const SizedBox(height: 15),
+          const Divider(),
+          const SizedBox(height: 15),
+          buildExchangeRates(context),
           const SizedBox(height: 15),
           const Divider(),
           const SizedBox(height: 15),
@@ -73,6 +78,17 @@ class Dashboard extends StatelessWidget {
         Text('Movimientos por categoría', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold), textAlign: TextAlign.center),
         SizedBox(height: 20),
         ExpensesByCategoryChart(),
+      ],
+    );
+  }
+
+  Widget buildExchangeRates(BuildContext context) {
+    return const Column(
+      key: Key('exchange-rates'),
+      children: [
+        Text('Tasas de cambio', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold), textAlign: TextAlign.center),
+        SizedBox(height: 20),
+        ExchangeRatesTable(),
       ],
     );
   }

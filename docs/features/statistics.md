@@ -33,7 +33,7 @@ Both filter by type, optionally by account, and optionally from a start date.
 - [all_expenses.dart](../../lib/views/statistics/all_expenses.dart) — the dashboard's "latest
   movements" section (a filtered `MovementsList`).
 - [dashboard.dart](../../lib/views/home/dashboard.dart) — composes total, totals pie, latest
-  movements, and both charts.
+  movements, both charts, and the "Tasas de cambio" table (between the category and day charts).
 - Charts render through the generic
   [easy_pie_chart.dart](../../lib/views/generics/easy_pie_chart.dart).
 

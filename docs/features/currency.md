@@ -38,6 +38,10 @@ Currencies are stored on `Account` as `TEXT` via `Currency.name` (see
 - [currency_selector.dart](../../lib/views/generics/currency_selector.dart) — the generic
   currency picker (a `ButtonSelector` of currency icon + name), used to choose the display
   currency on the home tabs, statistics, and the new-account dialog.
+- [exchange_rates.dart](../../lib/views/home/exchange_rates.dart) — the dashboard's "Tasas de
+  cambio" table: current USD/EUR rates against ARS (via `convertCurrencies(1, …, ARS)`) plus the
+  last-update timestamp from `currencyRatesRepository.findLatest` (shows `Nunca` when no row
+  exists yet). Refreshes on the repository's `change` event.
 
 ## Edge cases / debt
 
