@@ -39,28 +39,26 @@ most inline `GetIt`, deprecated APIs, and several bugs). What remains is below.
 - Unused codegen dependencies in `pubspec.yaml`: `json_serializable`, `json_annotation`,
   `build_runner` — nothing uses them; models are hand-written.
 
-## Coding-style / state-pattern violations
+## Framework smells (not a documented-pattern violation)
 
-- **Inline `GetIt.instance.get<…>()` in `const` `StatelessWidget`s.** Caching the lookup in a
-  field (the DI convention) would force dropping the `const` constructor, so these are left
-  pending a decision on how to cache DI in a const widget:
-  [currency_selector.dart](../lib/views/generics/currency_selector.dart) (`getCurrencyIcon` in
-  `build`), [dashboard.dart](../lib/views/home/dashboard.dart) (`buildTotalsChart` value
-  callback), and `MovementListItem` in
-  [movements_list.dart](../lib/views/home/movements_list.dart) (`amount` getter / `buildAmount`
-  — a per-list-item hot path). State classes and repositories have been converted to cached
-  fields.
-- **`canSubmit` runs `Form.validate()` inside `build`** (validation as a build-time side
-  effect) — [new_movement.dialog.dart](../lib/views/movements/new_movement.dialog.dart),
+- **`canSubmit` runs `Form.validate()` inside `build`.** The `get canSubmit` getter is itself a
+  sanctioned pattern ([coding-style.md](coding-style.md)), and all three dialogs do it
+  identically, so this breaks no money-app rule. But `FormState.validate()` mutates each
+  field's error state and requests a rebuild, so evaluating it during `build` gives `build` a
+  side effect — a general Flutter smell. It works here only because errors are hidden
+  (`errorStyle` height 0) and the forms `setState` on change. Files:
+  [new_movement.dialog.dart](../lib/views/movements/new_movement.dialog.dart),
   [new_account.dialog.dart](../lib/views/accounts/new_account.dialog.dart),
-  [new_category.dialog.dart](../lib/views/categories/new_category.dialog.dart). Fixing this
-  needs a small pattern decision (compute validity from field changes instead of validating in
-  `build`), so it is deferred.
+  [new_category.dialog.dart](../lib/views/categories/new_category.dialog.dart). A side-effect-free
+  fix would compute validity from field changes; left as-is for now.
 
 ## Not a violation (recorded to avoid re-flagging)
 
 - **File size** — no file exceeds the ~500-line guideline; the largest is
   `new_movement.dialog.dart` at ~440 lines.
+- **Inline `GetIt` in `const` `StatelessWidget`s** (`CurrencySelector`, `Dashboard`,
+  `MovementListItem`). Keeping the `const` constructor takes priority over caching the lookup
+  in a field — see the DI exception in [conventions.md](conventions.md).
 - **`SCREAMING_CASE` enum members** (`Currency`, `MovementType`, `DatabaseColumnType`, …) trip
   the `constant_identifier_names` lint. This is the project's deliberate style — enums are
   stored via `.name` and read back with `byName`, so the wire values are intentional. Do not
