@@ -1,4 +1,3 @@
-
 import 'package:money/models/category.model.dart';
 import 'package:money/models/movement.model.dart';
 import 'package:money/repositories/base.repository.dart';

@@ -1,4 +1,3 @@
-
 import 'package:events_emitter/events_emitter.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
@@ -316,7 +315,7 @@ class _NewMovementDialogState extends State<NewMovementDialog> {
 
   List<Widget> buildConversionRateSection(BuildContext context) {
     return [
-      Text('Recibís ${utilsService.beautifyCurrency(amount * conversionRate, target.currency)}'),
+      Text('Recibís ${ utilsService.beautifyCurrency(amount * conversionRate, target.currency) }'),
       IntrinsicWidth(
         child: TextFormField(
           keyboardType: TextInputType.number,

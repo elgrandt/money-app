@@ -1,6 +1,3 @@
-
-
-
 import 'package:get_it/get_it.dart';
 import 'package:logger/logger.dart';
 import 'package:money/migrations/migration_definition.dart';

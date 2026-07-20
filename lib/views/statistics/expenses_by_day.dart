@@ -1,6 +1,4 @@
-
 import 'dart:math';
-
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
@@ -69,7 +67,6 @@ class _ExpensesByDayChartState extends State<ExpensesByDayChart> {
   }
 
   void doCalculations(List<Map<String, Object?>> expensesByDay) {
-    // Calcular la fecha de inicio en función a la opción seleccionada
     DateTime startDate;
     if (selectedPeriod == 'week') {
       startDate = DateTime.now().subtract(const Duration(days: 7));
@@ -88,14 +85,12 @@ class _ExpensesByDayChartState extends State<ExpensesByDayChart> {
         }
       }
     }
-    // Generar la lista de días entre la fecha de inicio y la fecha actual
     List<String> days = [];
     var currentDate = startDate;
     while (currentDate.isBefore(DateTime.now())) {
       days.add(DateFormat('dd-MM-yyyy').format(currentDate));
       currentDate = currentDate.add(const Duration(days: 1));
     }
-    // generar los grupos de barras
     List<BarChartGroupData> groups = [];
     double sum = 0;
     for (var i = 0; i < days.length; i++) {
@@ -113,7 +108,6 @@ class _ExpensesByDayChartState extends State<ExpensesByDayChart> {
         ],
       ));
     }
-    // Calcular los valores mínimos y máximos
     var minAmount = expensesByDay.map((e) => e['total'] as double).reduce(min);
     var maxAmount = expensesByDay.map((e) => e['total'] as double).reduce(max);
     double minY = min(0, minAmount);

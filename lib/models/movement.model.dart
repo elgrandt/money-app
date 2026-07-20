@@ -1,4 +1,3 @@
-
 import 'package:money/models/account.model.dart';
 import 'package:money/models/base.model.dart';
 
@@ -27,6 +26,6 @@ class Movement extends BaseModel {
 
   @override
   String toString() {
-    return '$creationDate: ${type.name} $amount (from: ${source?.name ?? '-'}) (to: ${target?.name ?? '-'})';
+    return '$creationDate: ${ type.name } $amount (from: ${ source?.name ?? '-' }) (to: ${ target?.name ?? '-' })';
   }
 }

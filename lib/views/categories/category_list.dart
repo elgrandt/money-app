@@ -1,4 +1,3 @@
-
 import 'package:events_emitter/events_emitter.dart';
 import 'package:flutter/material.dart';
 import 'package:get_it/get_it.dart';
@@ -14,7 +13,7 @@ import 'package:money/views/generics/navbar.dart';
 import 'package:money/views/generics/tabs.dart' as tabs;
 
 class CategoryList extends StatefulWidget {
-  const CategoryList({ super.key });
+  const CategoryList({super.key});
 
   @override
   State<CategoryList> createState() => _CategoryListState();
@@ -125,7 +124,7 @@ class _CategoryListState extends State<CategoryList> {
             color: Colors.grey.withValues(alpha: 0.5),
             spreadRadius: 5,
             blurRadius: 7,
-            offset: const Offset(0, 3), // changes position of shadow
+            offset: const Offset(0, 3),
           ),
         ],
       ),

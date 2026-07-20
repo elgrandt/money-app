@@ -35,7 +35,7 @@ class MovementsListState extends State<MovementsList> {
   get filteredMovements {
     if (movements == null) return null;
     var filtered = utilsService.filterList(movements!, search, (Movement movement) {
-      return '${movement.category}*****${movement.description}';
+      return '${ movement.category }*****${ movement.description }';
     });
     filtered = filtered.where((movement) => widget.movementTypeFilter == null || movement.type == widget.movementTypeFilter).toList();
     return filtered;

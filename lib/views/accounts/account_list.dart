@@ -1,4 +1,3 @@
-
 import 'package:events_emitter/events_emitter.dart';
 import 'package:flutter/material.dart';
 import 'package:get_it/get_it.dart';
@@ -133,7 +132,7 @@ class _AccountListState extends State<AccountList> {
             color: Colors.grey.withValues(alpha: 0.5),
             spreadRadius: 5,
             blurRadius: 7,
-            offset: const Offset(0, 3), // changes position of shadow
+            offset: const Offset(0, 3),
           ),
         ],
       ),

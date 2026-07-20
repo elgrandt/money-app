@@ -1,4 +1,3 @@
-
 import 'package:get_it/get_it.dart';
 import 'package:intl/intl.dart';
 import 'package:logger/logger.dart';
@@ -80,8 +79,8 @@ class MovementsRepository extends BaseRepository<Movement> {
       }
     }
     for (var accountColumn in databaseService.accountsRepository.columnDefinitions) {
-      fullColumns.add('source.${accountColumn.name} AS source_${accountColumn.name}');
-      fullColumns.add('target.${accountColumn.name} AS target_${accountColumn.name}');
+      fullColumns.add('source.${ accountColumn.name } AS source_${ accountColumn.name }');
+      fullColumns.add('target.${ accountColumn.name } AS target_${ accountColumn.name }');
     }
     var query = 'SELECT ${ fullColumns.join(', ') } FROM $tableName AS movement LEFT JOIN accounts AS source ON movement.sourceId = source.id LEFT JOIN accounts as target ON movement.targetId = target.id';
     if (where != null) {

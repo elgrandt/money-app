@@ -1,4 +1,3 @@
-
 class MigrationDefinition {
   String name;
   Future<void> Function() up;
