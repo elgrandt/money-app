@@ -4,6 +4,8 @@ import 'package:get_it/get_it.dart';
 import 'package:intl/intl.dart';
 import 'package:logger/logger.dart';
 import 'package:money/models/account.model.dart';
+import 'package:money/models/currency_rates.model.dart';
+import 'package:money/services/database.service.dart';
 import 'package:http/http.dart' as http;
 
 class CurrencyMapping {
@@ -48,21 +50,9 @@ class UtilsService {
 
   UtilsService();
 
-  Future<void> updateCurrencyMappings() async {
-    // Update currency mappings every hour
-    var diff = DateTime.now().millisecondsSinceEpoch - lastCurrencyMappingUpdate.millisecondsSinceEpoch;
-    if (diff < 1000 * 60 * 60) return; // 1 hour
-    logger.d('Updating currency mappings');
-    lastCurrencyMappingUpdate = DateTime.now();
-    // Get currency mappings from API
-    var url = Uri.parse('https://api.bluelytics.com.ar/v2/latest');
-    var response = await http.get(url);
-    var json = response.body;
-    var body = jsonDecode(json);
-    // Update currency mappings
-    double usdToArs = body['blue']['value_buy'];
-    double eurToArs = body['blue_euro']['value_buy'];
-    double eurToUsd = 1.11;
+  DatabaseService get _databaseService => GetIt.instance.get<DatabaseService>();
+
+  void applyRates({ required double usdToArs, required double eurToArs, required double eurToUsd }) {
     currencyMappings = [
       CurrencyMapping(from: Currency.ARS, to: Currency.EUR, multiplier: 1 / eurToArs),
       CurrencyMapping(from: Currency.ARS, to: Currency.USD, multiplier: 1 / usdToArs),
@@ -71,6 +61,45 @@ class UtilsService {
       CurrencyMapping(from: Currency.EUR, to: Currency.ARS, multiplier: eurToArs),
       CurrencyMapping(from: Currency.EUR, to: Currency.USD, multiplier: eurToUsd),
     ];
+  }
+
+  Future<void> loadCachedMappings() async {
+    try {
+      await _databaseService.initialized;
+      var cached = await _databaseService.currencyRatesRepository.findLatest();
+      if (cached != null) {
+        applyRates(usdToArs: cached.usdToArs, eurToArs: cached.eurToArs, eurToUsd: cached.eurToUsd);
+        logger.d('Loaded cached currency mappings: $cached');
+      }
+    } catch (error, stackTrace) {
+      logger.e('Error loading cached currency mappings', error: error, stackTrace: stackTrace);
+    }
+  }
+
+  Future<void> updateCurrencyMappings() async {
+    var diff = DateTime.now().millisecondsSinceEpoch - lastCurrencyMappingUpdate.millisecondsSinceEpoch;
+    if (diff < const Duration(hours: 1).inMilliseconds) return;
+    logger.d('Updating currency mappings');
+    lastCurrencyMappingUpdate = DateTime.now();
+    try {
+      var url = Uri.parse('https://api.bluelytics.com.ar/v2/latest');
+      var response = await http.get(url);
+      var json = response.body;
+      var body = jsonDecode(json);
+      double usdToArs = body['blue']['value_buy'];
+      double eurToArs = body['blue_euro']['value_buy'];
+      double eurToUsd = 1.11;
+      applyRates(usdToArs: usdToArs, eurToArs: eurToArs, eurToUsd: eurToUsd);
+      await _databaseService.currencyRatesRepository.saveLatest(CurrencyRates(
+        usdToArs: usdToArs,
+        eurToArs: eurToArs,
+        eurToUsd: eurToUsd,
+        updatedAt: DateTime.now(),
+      ));
+      logger.d('Currency mappings updated successfully');
+    } catch (error, stackTrace) {
+      logger.e('Error updating currency mappings', error: error, stackTrace: stackTrace);
+    }
   }
 
   double convertCurrencies(double amount, Currency from, Currency to) {

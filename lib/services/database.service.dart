@@ -3,6 +3,7 @@ import 'package:get_it/get_it.dart';
 import 'package:logger/logger.dart';
 import 'package:money/repositories/accounts.repository.dart';
 import 'package:money/repositories/categories.repository.dart';
+import 'package:money/repositories/currency_rates.repository.dart';
 import 'package:money/repositories/migrations.repository.dart';
 import 'package:money/repositories/movements.repository.dart';
 import 'package:sqflite/sqflite.dart';
@@ -20,6 +21,7 @@ class DatabaseService {
   late MovementsRepository movementsRepository;
   late AccountsRepository accountsRepository;
   late CategoriesRepository categoriesRepository;
+  late CurrencyRatesRepository currencyRatesRepository;
   // Add new repositories here
   
   Future<void> get initialized {
@@ -58,6 +60,7 @@ class DatabaseService {
     movementsRepository = MovementsRepository(db);
     accountsRepository = AccountsRepository(db);
     categoriesRepository = CategoriesRepository(db);
+    currencyRatesRepository = CurrencyRatesRepository(db);
     // Add new repositories here
     if (_autosync) {
       await migrationsRepository.sync();
@@ -70,6 +73,7 @@ class DatabaseService {
     await movementsRepository.deleteAll();
     await accountsRepository.deleteAll();
     await categoriesRepository.deleteAll();
+    await currencyRatesRepository.deleteAll();
     // Add new repositories here
   }
 }

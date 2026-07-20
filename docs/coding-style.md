@@ -29,6 +29,21 @@ extension markers such as `// Add new repositories here` in
 [database.service.dart](../lib/services/database.service.dart). Do not narrate what the code
 does line by line.
 
+**This is a hard rule — do not add comments to explain code, including your own changes:**
+
+- **No narration** — do not restate what a line does (`// advance the timestamp`,
+  `// loop over the accounts`).
+- **No rationale/"why" comments** — the reasoning behind a non-obvious choice does **not** go in
+  a code comment. It goes in the commit message and, if it is behavior worth documenting, in the
+  relevant `docs/` file. A multi-line explanatory block above a statement is the most common
+  form of this violation — never write one.
+- **No TODO/FIXME/section-header comments.**
+
+If a piece of code feels like it *needs* a comment to be understood, prefer making it
+self-explanatory (a well-named variable, a `getX()` getter, an extracted method). Only when that
+genuinely cannot express the intent do you stop and discuss adding a comment (meta-rule) — the
+default is no comment.
+
 ## Method ordering inside a class
 
 Order members as:
