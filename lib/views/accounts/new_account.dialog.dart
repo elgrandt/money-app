@@ -32,7 +32,7 @@ class _NewAccountDialogState extends State<NewAccountDialog> {
       sortIndex: accountsCount,
     );
     await databaseService.accountsRepository.insert(account);
-    if (!context.mounted) return;
+    if (!mounted) return;
     Navigator.of(context).pop(true);
   }
 

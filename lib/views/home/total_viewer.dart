@@ -18,6 +18,8 @@ class TotalViewer extends StatefulWidget {
 }
 
 class _TotalViewerState extends State<TotalViewer> {
+  var utilsService = GetIt.instance.get<UtilsService>();
+  var databaseService = GetIt.instance.get<DatabaseService>();
   bool _visible = false;
 
   get visible {
@@ -28,13 +30,7 @@ class _TotalViewerState extends State<TotalViewer> {
     }
   }
 
-  @override
-  void initState() {
-    super.initState();
-  }
-
   String totalString() {
-    var utilsService = GetIt.instance.get<UtilsService>();
     if (visible) {
       double total = 0;
       if (widget.account != null) {
@@ -45,7 +41,7 @@ class _TotalViewerState extends State<TotalViewer> {
           total += utilsService.convertCurrencies(account.total, account.currency, widget.currency);
         }
       }
-      return GetIt.instance.get<UtilsService>().beautifyCurrency(total, widget.currency);
+      return utilsService.beautifyCurrency(total, widget.currency);
     } else {
       return '**** ${ utilsService.getCurrencySymbol(widget.currency) }';
     }
@@ -57,7 +53,6 @@ class _TotalViewerState extends State<TotalViewer> {
         _visible = !_visible;
       });
     } else {
-      var databaseService = GetIt.instance.get<DatabaseService>();
       databaseService.accountsRepository.switchShowTotal(widget.account!.id!);
     }
   }

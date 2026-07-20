@@ -55,6 +55,7 @@ class _ExpensesByCategoryChartState extends State<ExpensesByCategoryChart> {
       startDate = DateTime(DateTime.now().year, DateTime.now().month);
     }
     var result = await databaseService.movementsRepository.getExpensesByCategory(widget.account, selectedMovementType, startDate);
+    if (!mounted) return;
     result.sort((a, b) => (b['total'] as double).compareTo(a['total'] as double));
     setState(() {
       expensesByCategory = result;

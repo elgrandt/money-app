@@ -25,7 +25,7 @@ class _StatisticsState extends State<Statistics> {
   var logger = GetIt.instance.get<Logger>();
 
   @override
-  initState() {
+  void initState() {
     super.initState();
     getAccounts();
   }
@@ -35,6 +35,7 @@ class _StatisticsState extends State<Statistics> {
     try {
       logger.d('Getting accounts');
       var accounts = await databaseService.accountsRepository.find(orderBy: 'sortIndex ASC');
+      if (!mounted) return;
       setState(() {
         this.accounts = accounts;
       });

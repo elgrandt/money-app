@@ -163,7 +163,8 @@ abstract class BaseRepository<Model extends BaseModel> {
 
   Future<void> initializeTable() {
     var command = 'create table $tableName (${ columnDefinitions.join(', ') })';
-    GetIt.instance.get<Logger>().d('Initializing table $command');
+    var logger = GetIt.instance.get<Logger>();
+    logger.d('Initializing table $command');
     return db.execute(command);
   }
 

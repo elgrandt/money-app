@@ -47,6 +47,7 @@ class _CategoryListState extends State<CategoryList> {
     try {
       logger.d('Getting categories');
       var categoriesByType = await databaseService.categoriesRepository.getCategoriesByType();
+      if (!mounted) return;
       setState(() {
         this.categoriesByType = categoriesByType;
       });

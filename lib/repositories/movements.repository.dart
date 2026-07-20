@@ -24,6 +24,7 @@ class MovementsRepository extends BaseRepository<Movement> {
 
   var logger = GetIt.instance.get<Logger>();
   var databaseService = GetIt.instance.get<DatabaseService>();
+  var utilsService = GetIt.instance.get<UtilsService>();
 
   MovementsRepository(Database db): super(db, 'movements', MovementsRepository.movementColumns);
 
@@ -149,7 +150,6 @@ class MovementsRepository extends BaseRepository<Movement> {
       creationDate: creationDate,
     );
     movement = await insert(movement);
-    var databaseService = GetIt.instance.get<DatabaseService>();
     if (movement.source != null) {
       await databaseService.accountsRepository.updateBalance(movement.source!.id!, -amount);
     }
@@ -163,7 +163,6 @@ class MovementsRepository extends BaseRepository<Movement> {
   }
 
   Future<void> remove(Movement movement) async {
-    var databaseService = GetIt.instance.get<DatabaseService>();
     if (movement.source != null) {
       await databaseService.accountsRepository.updateBalance(movement.source!.id!, movement.amount);
     }
@@ -194,7 +193,7 @@ class MovementsRepository extends BaseRepository<Movement> {
       double amount;
       if (movement.type == MovementType.ADD || movement.type == MovementType.REMOVE) {
         var movementAccount = movement.type == MovementType.ADD ? movement.target : movement.source;
-        amount = GetIt.instance.get<UtilsService>().convertCurrencies(movement.amount, movementAccount!.currency, account != null ? account.currency : Currency.USD);
+        amount = utilsService.convertCurrencies(movement.amount, movementAccount!.currency, account != null ? account.currency : Currency.USD);
       } else {
         amount = movement.type == MovementType.TRANSFER ? movement.amount : movement.amount * movement.conversionRate!;
       }
@@ -225,7 +224,7 @@ class MovementsRepository extends BaseRepository<Movement> {
       double amount;
       if (movement.type == MovementType.ADD || movement.type == MovementType.REMOVE) {
         var movementAccount = movement.type == MovementType.ADD ? movement.target : movement.source;
-        amount = GetIt.instance.get<UtilsService>().convertCurrencies(movement.amount, movementAccount!.currency, account != null ? account.currency : Currency.USD);
+        amount = utilsService.convertCurrencies(movement.amount, movementAccount!.currency, account != null ? account.currency : Currency.USD);
       } else {
         amount = movement.type == MovementType.TRANSFER ? movement.amount : movement.amount * movement.conversionRate!;
       }

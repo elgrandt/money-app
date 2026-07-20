@@ -46,6 +46,7 @@ class _AccountListState extends State<AccountList> {
     try {
       logger.d('Getting accounts');
       var accounts = await databaseService.accountsRepository.find(orderBy: 'sortIndex ASC');
+      if (!mounted) return;
       setState(() {
         this.accounts = accounts;
       });

@@ -25,7 +25,7 @@ class _NewCategoryDialogState extends State<NewCategoryDialog> {
   Future<void> submit() async {
     await databaseService.initialized;
     var result = await databaseService.categoriesRepository.create(widget.movementType, nameInputController.text);
-    if (!context.mounted) return;
+    if (!mounted) return;
     Navigator.of(context).pop(result);
   }
 

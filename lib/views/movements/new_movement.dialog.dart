@@ -88,7 +88,7 @@ class _NewMovementDialogState extends State<NewMovementDialog> {
       target,
       creationDate
     );
-    if (!context.mounted) return;
+    if (!mounted) return;
     Navigator.of(context).pop(result);
   }
 
@@ -100,6 +100,7 @@ class _NewMovementDialogState extends State<NewMovementDialog> {
 
   void getCategories({ String? selected }) {
     databaseService.categoriesRepository.getCategoriesByType().then((categoriesByType) {
+      if (!mounted) return;
       setState(() {
         this.categoriesByType = categoriesByType;
         selectedCategory = selected;
@@ -111,6 +112,7 @@ class _NewMovementDialogState extends State<NewMovementDialog> {
     await databaseService.initialized;
     try {
       var accounts = await databaseService.accountsRepository.find(orderBy: 'sortIndex ASC');
+      if (!mounted) return;
       setState(() {
         this.accounts = accounts;
       });

@@ -27,6 +27,7 @@ class _ExpensesByDayChartState extends State<ExpensesByDayChart> {
   MovementType selectedMovementType = MovementType.REMOVE;
   String? selectedPeriod = 'week';
   var databaseService = GetIt.instance.get<DatabaseService>();
+  var utilsService = GetIt.instance.get<UtilsService>();
   var accumulated = false;
   List<BarChartGroupData>? groups;
   List<String>? days;
@@ -57,6 +58,7 @@ class _ExpensesByDayChartState extends State<ExpensesByDayChart> {
       startDate = DateTime.now().subtract(const Duration(days: 365));
     }
     var result = await databaseService.movementsRepository.getExpensesByDay(widget.account, selectedMovementType, startDate);
+    if (!mounted) return;
     if (result.isNotEmpty) {
       doCalculations(result);
     } else {
@@ -315,7 +317,7 @@ class _ExpensesByDayChartState extends State<ExpensesByDayChart> {
     if (value > 1000000) {
       text = '${ (value / 1000000).toStringAsFixed(1) }M';
     }
-    var currency = GetIt.instance.get<UtilsService>().getCurrencySymbol(widget.account?.currency ?? Currency.USD);
+    var currency = utilsService.getCurrencySymbol(widget.account?.currency ?? Currency.USD);
     return BarTooltipItem(
       '',
       const TextStyle(fontSize: 14, color: Colors.white),
@@ -345,7 +347,7 @@ class _ExpensesByDayChartState extends State<ExpensesByDayChart> {
         text = 'Transferencias';
       }
     }
-    text += ' (${ GetIt.instance.get<UtilsService>().getCurrencySymbol(widget.account?.currency ?? Currency.USD) })';
+    text += ' (${ utilsService.getCurrencySymbol(widget.account?.currency ?? Currency.USD) })';
     return Text(text, style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Theme.of(context).primaryColor));
   }
 }

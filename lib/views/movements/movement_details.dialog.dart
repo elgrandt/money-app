@@ -78,17 +78,17 @@ class _MovementDetailsDialogState extends State<MovementDetailsDialog> {
     var result = await utilsService.confirm(context, title: 'Eliminar movimiento', message: '¿Estás seguro que deseas eliminar este movimiento?');
     if (result == true) {
       await databaseService.movementsRepository.remove(widget.movement);
-      if (!context.mounted) return;
+      if (!mounted) return;
       Navigator.of(context).pop(true);
     }
   }
 
-  openEditMovementDialog(BuildContext context) async {
+  openEditMovementDialog() async {
     var result = await showDialog<Movement?>(context: context, builder: (context) {
       return NewMovementDialog(movement: widget.movement);
     });
     if (result != null) {
-      if (!context.mounted) return;
+      if (!mounted) return;
       Navigator.of(context).pop(true);
     }
   }
@@ -153,7 +153,7 @@ class _MovementDetailsDialogState extends State<MovementDetailsDialog> {
       children: [
         CupertinoButton(
           padding: EdgeInsets.zero,
-          onPressed: () => openEditMovementDialog(context),
+          onPressed: () => openEditMovementDialog(),
           child: const Text('Editar movimiento', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
         ),
         ElevatedButton(
