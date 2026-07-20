@@ -66,6 +66,7 @@ most inline `GetIt`, deprecated APIs, and several bugs). What remains is below.
 - **`convertCurrencies` triggers an unawaited `updateCurrencyMappings()`**
   ([utils.service.dart](../lib/services/utils.service.dart)). Intentional: the multiplier
   changes infrequently, so the rate is refreshed in the background without blocking the UI.
-  First-load conversions in `Home` are covered because `initializeCurrencies()` awaits the
-  update before rendering.
+  `Home` no longer awaits the network fetch before rendering — `initializeCurrencies()` hydrates
+  cached mappings from the DB and renders immediately, and `updateCurrencyMappings` swallows
+  errors, so the background refresh is safe offline.
 </content>
