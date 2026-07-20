@@ -87,7 +87,7 @@ class _NewCategoryDialogState extends State<NewCategoryDialog> {
       mainAxisAlignment: MainAxisAlignment.spaceEvenly,
       children: [
         TextButton(
-          style: ButtonStyle(fixedSize: MaterialStateProperty.all(const Size(100, 30))),
+          style: ButtonStyle(fixedSize: WidgetStateProperty.all(const Size(100, 30))),
           onPressed: () {
             Navigator.of(context).pop();
           },

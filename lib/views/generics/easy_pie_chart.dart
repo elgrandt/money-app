@@ -105,8 +105,8 @@ class EasyPieChart<T> extends StatelessWidget {
           sections: getSections(colors),
           centerSpaceRadius: 0,
         ),
-        swapAnimationDuration: const Duration(milliseconds: 150),
-        swapAnimationCurve: Curves.linear,
+        duration: const Duration(milliseconds: 150),
+        curve: Curves.linear,
       ),
     );
   }

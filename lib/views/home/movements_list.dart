@@ -56,7 +56,7 @@ class MovementsListState extends State<MovementsList> {
   @override
   didUpdateWidget(MovementsList oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (movements == null || widget.account?.name != oldWidget.account?.name) {
+    if (movements == null || widget.account?.id != oldWidget.account?.id) {
       getMovements();
     }
   }

@@ -2,15 +2,13 @@ import 'dart:io';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:get_it/get_it.dart';
-import 'package:money/models/account.model.dart';
-import 'package:money/repositories/base.repository.dart';
 import 'package:money/services/database.service.dart';
 import 'package:money/views/generics/navbar.dart';
 import 'package:money/services/utils.service.dart';
 import 'package:path_provider/path_provider.dart';
 
 class Backups extends StatelessWidget {
-  var utilsService = GetIt.instance.get<UtilsService>();
+  final utilsService = GetIt.instance.get<UtilsService>();
 
   Backups({super.key});
 
@@ -29,14 +27,26 @@ class Backups extends StatelessWidget {
     );
   }
 
-  restoreBackup(BuildContext context) async {
+  Future<void> restoreBackup(BuildContext context) async {
     var file = await FilePicker.platform.pickFiles();
     if (file == null) return;
     var dir = await getApplicationDocumentsDirectory();
     File backup = File(file.files.single.path!);
-    File db = File('${ dir.path }/db.sqlite', );
+    File db = File('${ dir.path }/db.sqlite');
     await db.writeAsBytes(await backup.readAsBytes());
-    GetIt.instance.get<DatabaseService>().accountsRepository.events.emit('change', TableUpdateEvent<Account>(TableUpdateEventType.UPDATE, 0)); // Emit fake event to refresh accounts
+    if (!context.mounted) return;
+    await showCupertinoDialog<void>(context: context, builder: (context) {
+      return CupertinoAlertDialog(
+        title: const Text('Backup restaurado'),
+        content: const Text('Reiniciá la aplicación para ver los cambios.'),
+        actions: [
+          CupertinoDialogAction(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('Entendido'),
+          ),
+        ],
+      );
+    });
   }
 
   openDeleteDataConfirmationDialog(BuildContext context) async {

@@ -1,5 +1,4 @@
 import 'package:events_emitter/events_emitter.dart';
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:get_it/get_it.dart';
 import 'package:logger/logger.dart';
@@ -62,7 +61,7 @@ class _HomeState extends State<Home> {
       logger.d('Getting accounts');
       var accounts = await databaseService.accountsRepository.find(orderBy: 'sortIndex ASC');
       setState(() {
-        tabKeys = [GlobalKey<_HomeTabState>(), ...accounts.map((e) => GlobalKey<_HomeTabState>()).toList()];
+        tabKeys = [GlobalKey<_HomeTabState>(), ...accounts.map((e) => GlobalKey<_HomeTabState>())];
         this.accounts = accounts;
       });
     } catch (error, stackTrace) {

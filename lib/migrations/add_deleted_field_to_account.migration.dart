@@ -15,9 +15,9 @@ var addDeletedFieldToAccountMigration = MigrationDefinition(
     var databaseService = GetIt.instance.get<DatabaseService>();
     try {
       await databaseService.db.execute('ALTER TABLE accounts ADD deleted INT default 0 NOT NULL');
-    } catch (error, stackTrace) {
+    } catch (error) {
       if (error is DatabaseException && error.isDuplicateColumnError()) {
-        logger.w('Order column already exists');
+        logger.w('deleted column already exists');
       } else {
         rethrow;
       }

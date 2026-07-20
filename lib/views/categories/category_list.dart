@@ -7,6 +7,7 @@ import 'package:money/models/category.model.dart';
 import 'package:money/models/movement.model.dart';
 import 'package:money/repositories/base.repository.dart';
 import 'package:money/services/database.service.dart';
+import 'package:money/services/utils.service.dart';
 import 'package:money/views/categories/new_category.dialog.dart';
 import 'package:money/views/generics/loader.dart';
 import 'package:money/views/generics/navbar.dart';
@@ -23,9 +24,9 @@ class _CategoryListState extends State<CategoryList> {
 
   Map<MovementType, List<Category>>? categoriesByType;
   var databaseService = GetIt.instance.get<DatabaseService>();
+  var utilsService = GetIt.instance.get<UtilsService>();
   var logger = GetIt.instance.get<Logger>();
   EventListener<TableUpdateEvent<Category>>? categoriesListener;
-  bool disableCategoryUpdate = false;
   MovementType selectedMovementType = MovementType.ADD;
 
   @override
@@ -42,7 +43,6 @@ class _CategoryListState extends State<CategoryList> {
   }
 
   Future<void> getCategories() async {
-    if (disableCategoryUpdate) return;
     await databaseService.initialized;
     try {
       logger.d('Getting categories');
@@ -69,6 +69,12 @@ class _CategoryListState extends State<CategoryList> {
     });
   }
 
+  Future<void> deleteCategory(Category category) async {
+    var confirmed = await utilsService.confirm(context, title: 'Eliminar categoría', message: '¿Estás seguro que deseas eliminar esta categoría?');
+    if (!confirmed) return;
+    await databaseService.categoriesRepository.delete(category.id!);
+  }
+
   @override
   Widget build(BuildContext context) {
     return Navbar(
@@ -92,7 +98,7 @@ class _CategoryListState extends State<CategoryList> {
         name: movementTypeNames[movementType]!,
         body: buildCategoryList(context, movementType),
       )).toList(),
-    );;
+    );
   }
 
   Widget buildCategoryList(BuildContext context, MovementType movementType) {
@@ -115,7 +121,7 @@ class _CategoryListState extends State<CategoryList> {
         borderRadius: BorderRadius.circular(10),
         boxShadow: [
           BoxShadow(
-            color: Colors.grey.withOpacity(0.5),
+            color: Colors.grey.withValues(alpha: 0.5),
             spreadRadius: 5,
             blurRadius: 7,
             offset: const Offset(0, 3), // changes position of shadow
@@ -130,9 +136,7 @@ class _CategoryListState extends State<CategoryList> {
           children: [
             IconButton(
               icon: Icon(Icons.delete, color: Colors.red.shade900),
-              onPressed: () {
-                databaseService.categoriesRepository.delete(category.id!);
-              },
+              onPressed: () => deleteCategory(category),
             ),
           ],
         ),

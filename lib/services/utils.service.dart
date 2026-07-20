@@ -109,7 +109,7 @@ class UtilsService {
         content: message != null ? Text(message, textAlign: TextAlign.center, style: Theme.of(context).textTheme.bodyLarge?.copyWith(fontSize: 18)) : null,
         actions: [
           TextButton(
-              style: ButtonStyle(fixedSize: MaterialStateProperty.all(const Size(100, 30))),
+              style: ButtonStyle(fixedSize: WidgetStateProperty.all(const Size(100, 30))),
               onPressed: () => Navigator.of(context).pop(false),
               child: Text(cancelText, textAlign: TextAlign.center, style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Theme.of(context).primaryColor))
           ),

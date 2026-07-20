@@ -12,7 +12,7 @@ var categoriesInitializationMigration = MigrationDefinition(
   'categories_initialization',
   () async {
     var databaseService = GetIt.instance.get<DatabaseService>();
-    databaseService.categoriesRepository.initializeTable();
+    await databaseService.categoriesRepository.initializeTable();
   }, () async {
     logger.e('Cannot down this migration');
   }

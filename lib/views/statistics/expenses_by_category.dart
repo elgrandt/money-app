@@ -76,12 +76,13 @@ class _ExpensesByCategoryChartState extends State<ExpensesByCategoryChart> {
   }
 
   Widget buildTypeSelect(BuildContext context) {
+    var types = [MovementType.ADD, MovementType.REMOVE];
     return ButtonSelector(
-      options: MovementType.values.map((e) => Text(movementTypeNames[e]!)).toList(),
-      selectedIndex: MovementType.values.indexOf(selectedMovementType),
+      options: types.map((e) => Text(movementTypeNames[e]!)).toList(),
+      selectedIndex: types.indexOf(selectedMovementType),
       onSelectionChange: (index) {
         setState(() {
-          selectedMovementType = MovementType.values[index];
+          selectedMovementType = types[index];
           getExpensesByCategory();
         });
       },

@@ -12,7 +12,7 @@ var accountsInitializationMigration = MigrationDefinition(
   'accounts_initialization',
   () async {
     var databaseService = GetIt.instance.get<DatabaseService>();
-    databaseService.accountsRepository.initializeTable();
+    await databaseService.accountsRepository.initializeTable();
   }, () async {
     logger.e('Cannot down this migration');
   }

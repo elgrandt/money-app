@@ -2,6 +2,7 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:get_it/get_it.dart';
+import 'package:intl/intl.dart';
 import 'package:money/models/movement.model.dart';
 import 'package:money/services/database.service.dart';
 import 'package:money/services/utils.service.dart';
@@ -142,7 +143,7 @@ class _MovementDetailsDialogState extends State<MovementDetailsDialog> {
       const SizedBox(height: 10),
       const Text('Fecha y hora', textAlign: TextAlign.center, style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
       const SizedBox(height: 5),
-      Text('${date.day}/${date.month}/${date.year} ${date.hour}:${date.minute}', textAlign: TextAlign.center, style: const TextStyle(fontSize: 16)),
+      Text(DateFormat('dd/MM/yyyy HH:mm').format(date), textAlign: TextAlign.center, style: const TextStyle(fontSize: 16)),
     ];
   }
 

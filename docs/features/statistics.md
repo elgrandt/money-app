@@ -39,9 +39,13 @@ Both filter by type, optionally by account, and optionally from a start date.
 
 ## Edge cases
 
-- **Cross-currency aggregation** — amounts are converted to a common currency (the account's,
-  or USD) before summing, so mixed-currency data aggregates sensibly
+- **Cross-currency aggregation** — amounts are converted to a common currency (the selected
+  account's, or USD when no account is selected) before summing, so mixed-currency data
+  aggregates sensibly
   ([movements.repository.dart:192-207](../../lib/repositories/movements.repository.dart#L192-L207)).
+- **Category chart movement types** — the category chart offers only income (`ADD`) and
+  expense (`REMOVE`); transfers are excluded because a per-category transfer total is not
+  meaningful. The day chart still offers all three types.
 - **Period options** — category chart: `this-month` / `month` / `year` / all; day chart:
   `week` / `month` / `year` / all.
 - **Accumulated mode** — recomputes the bar groups as a running sum and adjusts the Y range

@@ -193,8 +193,8 @@ class MovementsRepository extends BaseRepository<Movement> {
       var category = movement.category;
       double amount;
       if (movement.type == MovementType.ADD || movement.type == MovementType.REMOVE) {
-        var account = movement.type == MovementType.ADD ? movement.target : movement.source;
-        amount = GetIt.instance.get<UtilsService>().convertCurrencies(movement.amount, account!.currency, Currency.USD);
+        var movementAccount = movement.type == MovementType.ADD ? movement.target : movement.source;
+        amount = GetIt.instance.get<UtilsService>().convertCurrencies(movement.amount, movementAccount!.currency, account != null ? account.currency : Currency.USD);
       } else {
         amount = movement.type == MovementType.TRANSFER ? movement.amount : movement.amount * movement.conversionRate!;
       }
