@@ -1,6 +1,3 @@
-
-
-
 import 'package:get_it/get_it.dart';
 import 'package:logger/logger.dart';
 import 'package:money/migrations/migration_definition.dart';
@@ -15,9 +12,9 @@ var addSortIndexFieldToAccountMigration = MigrationDefinition(
     var databaseService = GetIt.instance.get<DatabaseService>();
     try {
       await databaseService.db.execute('ALTER TABLE accounts ADD sortIndex INT default 0 NOT NULL');
-    } catch (error, stackTrace) {
+    } catch (error) {
       if (error is DatabaseException && error.isDuplicateColumnError()) {
-        logger.w('Order column already exists');
+        logger.w('sortIndex column already exists');
       } else {
         rethrow;
       }

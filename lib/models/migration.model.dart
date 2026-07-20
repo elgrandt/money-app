@@ -1,4 +1,3 @@
-
 import 'package:money/models/base.model.dart';
 
 class Migration extends BaseModel {

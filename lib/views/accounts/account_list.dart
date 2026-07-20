@@ -1,4 +1,3 @@
-
 import 'package:events_emitter/events_emitter.dart';
 import 'package:flutter/material.dart';
 import 'package:get_it/get_it.dart';
@@ -6,6 +5,7 @@ import 'package:logger/logger.dart';
 import 'package:money/models/account.model.dart';
 import 'package:money/repositories/base.repository.dart';
 import 'package:money/services/database.service.dart';
+import 'package:money/services/utils.service.dart';
 import 'package:money/views/accounts/new_account.dialog.dart';
 import 'package:money/views/generics/loader.dart';
 import 'package:money/views/generics/navbar.dart';
@@ -21,6 +21,7 @@ class _AccountListState extends State<AccountList> {
 
   List<Account>? accounts;
   var databaseService = GetIt.instance.get<DatabaseService>();
+  var utilsService = GetIt.instance.get<UtilsService>();
   var logger = GetIt.instance.get<Logger>();
   EventListener<TableUpdateEvent<Account>>? accountsListener;
   bool disableAccountUpdate = false;
@@ -44,6 +45,7 @@ class _AccountListState extends State<AccountList> {
     try {
       logger.d('Getting accounts');
       var accounts = await databaseService.accountsRepository.find(orderBy: 'sortIndex ASC');
+      if (!mounted) return;
       setState(() {
         this.accounts = accounts;
       });
@@ -64,6 +66,12 @@ class _AccountListState extends State<AccountList> {
     await showDialog<bool?>(context: context, builder: (context) {
       return const NewAccountDialog();
     });
+  }
+
+  Future<void> deleteAccount(Account account) async {
+    var confirmed = await utilsService.confirm(context, title: 'Eliminar cuenta', message: '¿Estás seguro que deseas eliminar esta cuenta?\nSe eliminarán también sus movimientos.');
+    if (!confirmed) return;
+    await databaseService.accountsRepository.delete(account.id!);
   }
 
   Future<void> updateAccountsOrder() async {
@@ -112,7 +120,7 @@ class _AccountListState extends State<AccountList> {
 
   Widget buildAccountItem(BuildContext context, Account account, int index) {
     return Container(
-      key: ValueKey(index),
+      key: ValueKey(account.id),
       margin: const EdgeInsets.symmetric(vertical: 10),
       padding: const EdgeInsets.only(top: 5, bottom: 5, left: 10),
       height: 60,
@@ -121,10 +129,10 @@ class _AccountListState extends State<AccountList> {
         borderRadius: BorderRadius.circular(10),
         boxShadow: [
           BoxShadow(
-            color: Colors.grey.withOpacity(0.5),
+            color: Colors.grey.withValues(alpha: 0.5),
             spreadRadius: 5,
             blurRadius: 7,
-            offset: const Offset(0, 3), // changes position of shadow
+            offset: const Offset(0, 3),
           ),
         ],
       ),
@@ -137,9 +145,7 @@ class _AccountListState extends State<AccountList> {
             if (accounts!.length > 1)
               IconButton(
                 icon: Icon(Icons.delete, color: Colors.red.shade900),
-                onPressed: () {
-                  databaseService.accountsRepository.delete(account.id!);
-                },
+                onPressed: () => deleteAccount(account),
               ),
             if (accounts!.length > 1)
               const SizedBox(width: 5),

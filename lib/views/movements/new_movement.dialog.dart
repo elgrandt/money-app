@@ -1,4 +1,3 @@
-
 import 'package:events_emitter/events_emitter.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
@@ -88,7 +87,7 @@ class _NewMovementDialogState extends State<NewMovementDialog> {
       target,
       creationDate
     );
-    if (!context.mounted) return;
+    if (!mounted) return;
     Navigator.of(context).pop(result);
   }
 
@@ -100,6 +99,7 @@ class _NewMovementDialogState extends State<NewMovementDialog> {
 
   void getCategories({ String? selected }) {
     databaseService.categoriesRepository.getCategoriesByType().then((categoriesByType) {
+      if (!mounted) return;
       setState(() {
         this.categoriesByType = categoriesByType;
         selectedCategory = selected;
@@ -111,6 +111,7 @@ class _NewMovementDialogState extends State<NewMovementDialog> {
     await databaseService.initialized;
     try {
       var accounts = await databaseService.accountsRepository.find(orderBy: 'sortIndex ASC');
+      if (!mounted) return;
       setState(() {
         this.accounts = accounts;
       });
@@ -314,7 +315,7 @@ class _NewMovementDialogState extends State<NewMovementDialog> {
 
   List<Widget> buildConversionRateSection(BuildContext context) {
     return [
-      Text('Recibís ${utilsService.beautifyCurrency(amount * conversionRate, target.currency)}'),
+      Text('Recibís ${ utilsService.beautifyCurrency(amount * conversionRate, target.currency) }'),
       IntrinsicWidth(
         child: TextFormField(
           keyboardType: TextInputType.number,
@@ -417,7 +418,7 @@ class _NewMovementDialogState extends State<NewMovementDialog> {
       mainAxisAlignment: MainAxisAlignment.spaceEvenly,
       children: [
         TextButton(
-          style: ButtonStyle(fixedSize: MaterialStateProperty.all(const Size(120, 30))),
+          style: ButtonStyle(fixedSize: WidgetStateProperty.all(const Size(120, 30))),
           onPressed: () {
             Navigator.of(context).pop();
           },

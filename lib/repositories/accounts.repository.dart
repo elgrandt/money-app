@@ -1,4 +1,3 @@
-
 import 'package:get_it/get_it.dart';
 import 'package:money/models/account.model.dart';
 import 'package:money/models/movement.model.dart';

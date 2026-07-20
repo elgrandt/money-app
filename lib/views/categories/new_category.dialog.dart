@@ -1,4 +1,3 @@
-
 import 'package:flutter/material.dart';
 import 'package:get_it/get_it.dart';
 import 'package:money/models/movement.model.dart';
@@ -25,7 +24,7 @@ class _NewCategoryDialogState extends State<NewCategoryDialog> {
   Future<void> submit() async {
     await databaseService.initialized;
     var result = await databaseService.categoriesRepository.create(widget.movementType, nameInputController.text);
-    if (!context.mounted) return;
+    if (!mounted) return;
     Navigator.of(context).pop(result);
   }
 
@@ -87,7 +86,7 @@ class _NewCategoryDialogState extends State<NewCategoryDialog> {
       mainAxisAlignment: MainAxisAlignment.spaceEvenly,
       children: [
         TextButton(
-          style: ButtonStyle(fixedSize: MaterialStateProperty.all(const Size(100, 30))),
+          style: ButtonStyle(fixedSize: WidgetStateProperty.all(const Size(100, 30))),
           onPressed: () {
             Navigator.of(context).pop();
           },

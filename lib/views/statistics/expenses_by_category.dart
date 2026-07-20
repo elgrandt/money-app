@@ -1,6 +1,4 @@
-
 import 'dart:math';
-
 import 'package:flutter/material.dart';
 import 'package:get_it/get_it.dart';
 import 'package:money/models/account.model.dart';
@@ -55,6 +53,7 @@ class _ExpensesByCategoryChartState extends State<ExpensesByCategoryChart> {
       startDate = DateTime(DateTime.now().year, DateTime.now().month);
     }
     var result = await databaseService.movementsRepository.getExpensesByCategory(widget.account, selectedMovementType, startDate);
+    if (!mounted) return;
     result.sort((a, b) => (b['total'] as double).compareTo(a['total'] as double));
     setState(() {
       expensesByCategory = result;
@@ -76,12 +75,13 @@ class _ExpensesByCategoryChartState extends State<ExpensesByCategoryChart> {
   }
 
   Widget buildTypeSelect(BuildContext context) {
+    var types = [MovementType.ADD, MovementType.REMOVE];
     return ButtonSelector(
-      options: MovementType.values.map((e) => Text(movementTypeNames[e]!)).toList(),
-      selectedIndex: MovementType.values.indexOf(selectedMovementType),
+      options: types.map((e) => Text(movementTypeNames[e]!)).toList(),
+      selectedIndex: types.indexOf(selectedMovementType),
       onSelectionChange: (index) {
         setState(() {
-          selectedMovementType = MovementType.values[index];
+          selectedMovementType = types[index];
           getExpensesByCategory();
         });
       },

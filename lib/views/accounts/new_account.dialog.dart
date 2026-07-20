@@ -1,4 +1,3 @@
-
 import 'package:flutter/material.dart';
 import 'package:get_it/get_it.dart';
 import 'package:money/models/account.model.dart';
@@ -23,6 +22,7 @@ class _NewAccountDialogState extends State<NewAccountDialog> {
   }
 
   Future<void> submit() async {
+    await databaseService.initialized;
     var accountsCount = await databaseService.accountsRepository.count();
     var account = Account(
       name: nameInputController.text,
@@ -30,9 +30,8 @@ class _NewAccountDialogState extends State<NewAccountDialog> {
       currency: currency,
       sortIndex: accountsCount,
     );
-    await databaseService.initialized;
-    var result = await databaseService.accountsRepository.insert(account);
-    if (!context.mounted) return;
+    await databaseService.accountsRepository.insert(account);
+    if (!mounted) return;
     Navigator.of(context).pop(true);
   }
 
@@ -103,7 +102,7 @@ class _NewAccountDialogState extends State<NewAccountDialog> {
       mainAxisAlignment: MainAxisAlignment.spaceEvenly,
       children: [
         TextButton(
-            style: ButtonStyle(fixedSize: MaterialStateProperty.all(const Size(120, 30))),
+            style: ButtonStyle(fixedSize: WidgetStateProperty.all(const Size(120, 30))),
             onPressed: () {
               Navigator.of(context).pop();
             },

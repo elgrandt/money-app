@@ -27,14 +27,15 @@ class MovementsList extends StatefulWidget {
 class MovementsListState extends State<MovementsList> {
   List<Movement>? movements;
   var databaseService = GetIt.instance.get<DatabaseService>();
+  var utilsService = GetIt.instance.get<UtilsService>();
   EventListener<TableUpdateEvent<Movement>>? movementsListener;
   String search = '';
   var logger = GetIt.instance.get<Logger>();
 
   get filteredMovements {
     if (movements == null) return null;
-    var filtered = GetIt.instance.get<UtilsService>().filterList(movements!, search, (Movement movement) {
-      return '${movement.category}*****${movement.description}';
+    var filtered = utilsService.filterList(movements!, search, (Movement movement) {
+      return '${ movement.category }*****${ movement.description }';
     });
     filtered = filtered.where((movement) => widget.movementTypeFilter == null || movement.type == widget.movementTypeFilter).toList();
     return filtered;
@@ -54,9 +55,9 @@ class MovementsListState extends State<MovementsList> {
   }
 
   @override
-  didUpdateWidget(MovementsList oldWidget) {
+  void didUpdateWidget(MovementsList oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (movements == null || widget.account?.name != oldWidget.account?.name) {
+    if (movements == null || widget.account?.id != oldWidget.account?.id) {
       getMovements();
     }
   }
@@ -78,7 +79,7 @@ class MovementsListState extends State<MovementsList> {
         this.movements = movements;
       });
     } catch (error, stackTrace) {
-      GetIt.instance.get<Logger>().e('Error getting movements', error: error, stackTrace: stackTrace);
+      logger.e('Error getting movements', error: error, stackTrace: stackTrace);
     }
   }
 

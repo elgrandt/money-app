@@ -1,6 +1,4 @@
-
 import 'dart:math';
-
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
@@ -27,6 +25,7 @@ class _ExpensesByDayChartState extends State<ExpensesByDayChart> {
   MovementType selectedMovementType = MovementType.REMOVE;
   String? selectedPeriod = 'week';
   var databaseService = GetIt.instance.get<DatabaseService>();
+  var utilsService = GetIt.instance.get<UtilsService>();
   var accumulated = false;
   List<BarChartGroupData>? groups;
   List<String>? days;
@@ -57,6 +56,7 @@ class _ExpensesByDayChartState extends State<ExpensesByDayChart> {
       startDate = DateTime.now().subtract(const Duration(days: 365));
     }
     var result = await databaseService.movementsRepository.getExpensesByDay(widget.account, selectedMovementType, startDate);
+    if (!mounted) return;
     if (result.isNotEmpty) {
       doCalculations(result);
     } else {
@@ -67,7 +67,6 @@ class _ExpensesByDayChartState extends State<ExpensesByDayChart> {
   }
 
   void doCalculations(List<Map<String, Object?>> expensesByDay) {
-    // Calcular la fecha de inicio en función a la opción seleccionada
     DateTime startDate;
     if (selectedPeriod == 'week') {
       startDate = DateTime.now().subtract(const Duration(days: 7));
@@ -86,14 +85,12 @@ class _ExpensesByDayChartState extends State<ExpensesByDayChart> {
         }
       }
     }
-    // Generar la lista de días entre la fecha de inicio y la fecha actual
     List<String> days = [];
     var currentDate = startDate;
     while (currentDate.isBefore(DateTime.now())) {
       days.add(DateFormat('dd-MM-yyyy').format(currentDate));
       currentDate = currentDate.add(const Duration(days: 1));
     }
-    // generar los grupos de barras
     List<BarChartGroupData> groups = [];
     double sum = 0;
     for (var i = 0; i < days.length; i++) {
@@ -111,7 +108,6 @@ class _ExpensesByDayChartState extends State<ExpensesByDayChart> {
         ],
       ));
     }
-    // Calcular los valores mínimos y máximos
     var minAmount = expensesByDay.map((e) => e['total'] as double).reduce(min);
     var maxAmount = expensesByDay.map((e) => e['total'] as double).reduce(max);
     double minY = min(0, minAmount);
@@ -315,7 +311,7 @@ class _ExpensesByDayChartState extends State<ExpensesByDayChart> {
     if (value > 1000000) {
       text = '${ (value / 1000000).toStringAsFixed(1) }M';
     }
-    var currency = GetIt.instance.get<UtilsService>().getCurrencySymbol(widget.account?.currency ?? Currency.USD);
+    var currency = utilsService.getCurrencySymbol(widget.account?.currency ?? Currency.USD);
     return BarTooltipItem(
       '',
       const TextStyle(fontSize: 14, color: Colors.white),
@@ -345,7 +341,7 @@ class _ExpensesByDayChartState extends State<ExpensesByDayChart> {
         text = 'Transferencias';
       }
     }
-    text += ' (${ GetIt.instance.get<UtilsService>().getCurrencySymbol(widget.account?.currency ?? Currency.USD) })';
+    text += ' (${ utilsService.getCurrencySymbol(widget.account?.currency ?? Currency.USD) })';
     return Text(text, style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Theme.of(context).primaryColor));
   }
 }

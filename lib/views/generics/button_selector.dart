@@ -1,6 +1,4 @@
-
 import 'dart:math';
-
 import 'package:flutter/material.dart';
 
 class ButtonSelector extends StatelessWidget {

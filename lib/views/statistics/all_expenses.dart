@@ -1,16 +1,8 @@
-import 'package:events_emitter/events_emitter.dart';
 import 'package:flutter/cupertino.dart';
-import 'package:get_it/get_it.dart';
-import 'package:logger/logger.dart';
 import 'package:money/models/account.model.dart';
 import 'package:money/models/movement.model.dart';
-import 'package:money/repositories/base.repository.dart';
-import 'package:money/services/database.service.dart';
-import 'package:money/services/utils.service.dart';
 import 'package:money/views/generics/currency_selector.dart';
-import 'package:money/views/generics/loader.dart';
 import 'package:money/views/home/movements_list.dart';
-import 'package:money/views/home/total_viewer.dart';
 
 class AllExpensesChart extends StatefulWidget {
   const AllExpensesChart({super.key});

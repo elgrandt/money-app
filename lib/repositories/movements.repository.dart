@@ -1,4 +1,3 @@
-
 import 'package:get_it/get_it.dart';
 import 'package:intl/intl.dart';
 import 'package:logger/logger.dart';
@@ -24,6 +23,7 @@ class MovementsRepository extends BaseRepository<Movement> {
 
   var logger = GetIt.instance.get<Logger>();
   var databaseService = GetIt.instance.get<DatabaseService>();
+  var utilsService = GetIt.instance.get<UtilsService>();
 
   MovementsRepository(Database db): super(db, 'movements', MovementsRepository.movementColumns);
 
@@ -79,8 +79,8 @@ class MovementsRepository extends BaseRepository<Movement> {
       }
     }
     for (var accountColumn in databaseService.accountsRepository.columnDefinitions) {
-      fullColumns.add('source.${accountColumn.name} AS source_${accountColumn.name}');
-      fullColumns.add('target.${accountColumn.name} AS target_${accountColumn.name}');
+      fullColumns.add('source.${ accountColumn.name } AS source_${ accountColumn.name }');
+      fullColumns.add('target.${ accountColumn.name } AS target_${ accountColumn.name }');
     }
     var query = 'SELECT ${ fullColumns.join(', ') } FROM $tableName AS movement LEFT JOIN accounts AS source ON movement.sourceId = source.id LEFT JOIN accounts as target ON movement.targetId = target.id';
     if (where != null) {
@@ -149,7 +149,6 @@ class MovementsRepository extends BaseRepository<Movement> {
       creationDate: creationDate,
     );
     movement = await insert(movement);
-    var databaseService = GetIt.instance.get<DatabaseService>();
     if (movement.source != null) {
       await databaseService.accountsRepository.updateBalance(movement.source!.id!, -amount);
     }
@@ -163,7 +162,6 @@ class MovementsRepository extends BaseRepository<Movement> {
   }
 
   Future<void> remove(Movement movement) async {
-    var databaseService = GetIt.instance.get<DatabaseService>();
     if (movement.source != null) {
       await databaseService.accountsRepository.updateBalance(movement.source!.id!, movement.amount);
     }
@@ -193,8 +191,8 @@ class MovementsRepository extends BaseRepository<Movement> {
       var category = movement.category;
       double amount;
       if (movement.type == MovementType.ADD || movement.type == MovementType.REMOVE) {
-        var account = movement.type == MovementType.ADD ? movement.target : movement.source;
-        amount = GetIt.instance.get<UtilsService>().convertCurrencies(movement.amount, account!.currency, Currency.USD);
+        var movementAccount = movement.type == MovementType.ADD ? movement.target : movement.source;
+        amount = utilsService.convertCurrencies(movement.amount, movementAccount!.currency, account != null ? account.currency : Currency.USD);
       } else {
         amount = movement.type == MovementType.TRANSFER ? movement.amount : movement.amount * movement.conversionRate!;
       }
@@ -225,7 +223,7 @@ class MovementsRepository extends BaseRepository<Movement> {
       double amount;
       if (movement.type == MovementType.ADD || movement.type == MovementType.REMOVE) {
         var movementAccount = movement.type == MovementType.ADD ? movement.target : movement.source;
-        amount = GetIt.instance.get<UtilsService>().convertCurrencies(movement.amount, movementAccount!.currency, account != null ? account.currency : Currency.USD);
+        amount = utilsService.convertCurrencies(movement.amount, movementAccount!.currency, account != null ? account.currency : Currency.USD);
       } else {
         amount = movement.type == MovementType.TRANSFER ? movement.amount : movement.amount * movement.conversionRate!;
       }

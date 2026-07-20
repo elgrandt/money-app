@@ -1,5 +1,4 @@
 import 'package:events_emitter/events_emitter.dart';
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:get_it/get_it.dart';
 import 'package:logger/logger.dart';
@@ -27,6 +26,7 @@ class Home extends StatefulWidget {
 
 class _HomeState extends State<Home> {
   var databaseService = GetIt.instance.get<DatabaseService>();
+  var utilsService = GetIt.instance.get<UtilsService>();
   var logger = GetIt.instance.get<Logger>();
 
   List<Account>? accounts;
@@ -50,7 +50,8 @@ class _HomeState extends State<Home> {
   }
 
   Future<void> initializeCurrencies() async {
-    await GetIt.instance.get<UtilsService>().updateCurrencyMappings();
+    await utilsService.updateCurrencyMappings();
+    if (!mounted) return;
     setState(() {
       initializedCurrencies = true;
     });
@@ -61,8 +62,9 @@ class _HomeState extends State<Home> {
     try {
       logger.d('Getting accounts');
       var accounts = await databaseService.accountsRepository.find(orderBy: 'sortIndex ASC');
+      if (!mounted) return;
       setState(() {
-        tabKeys = [GlobalKey<_HomeTabState>(), ...accounts.map((e) => GlobalKey<_HomeTabState>()).toList()];
+        tabKeys = [GlobalKey<_HomeTabState>(), ...accounts.map((e) => GlobalKey<_HomeTabState>())];
         this.accounts = accounts;
       });
     } catch (error, stackTrace) {

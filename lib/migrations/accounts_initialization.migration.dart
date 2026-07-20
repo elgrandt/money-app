@@ -1,6 +1,3 @@
-
-
-
 import 'package:get_it/get_it.dart';
 import 'package:logger/logger.dart';
 import 'package:money/migrations/migration_definition.dart';
@@ -12,7 +9,7 @@ var accountsInitializationMigration = MigrationDefinition(
   'accounts_initialization',
   () async {
     var databaseService = GetIt.instance.get<DatabaseService>();
-    databaseService.accountsRepository.initializeTable();
+    await databaseService.accountsRepository.initializeTable();
   }, () async {
     logger.e('Cannot down this migration');
   }

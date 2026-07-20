@@ -1,6 +1,4 @@
-
 import 'dart:ui';
-
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 
@@ -44,7 +42,7 @@ class _NavbarState extends State<Navbar> {
 }
 
 class NavigationMenu extends StatelessWidget {
-  const NavigationMenu({ super.key });
+  const NavigationMenu({super.key});
 
   void goToHome(BuildContext context) async {
     Navigator.of(context).pop();

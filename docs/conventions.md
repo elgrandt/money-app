@@ -75,6 +75,12 @@ var logger = GetIt.instance.get<Logger>();
 
 Do not call `GetIt.instance.get<X>()` inline inside `build`, getters, or hot paths.
 
+**Exception — `const` widgets win over caching.** A `const` `StatelessWidget` cannot hold a
+field initialized from `GetIt` without losing its `const` constructor. Keeping `const` takes
+priority: in that case call `GetIt.instance.get<X>()` inline rather than dropping `const`
+(e.g. `CurrencySelector`, `Dashboard`, `MovementListItem`). For non-const widgets and `State`
+classes, always cache in a field as above.
+
 ## Denormalized balances
 
 `Account.total` is **stored, not computed** from movements — a deliberate performance choice.

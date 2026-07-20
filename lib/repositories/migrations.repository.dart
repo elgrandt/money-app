@@ -1,4 +1,3 @@
-
 import 'package:get_it/get_it.dart';
 import 'package:logger/logger.dart';
 import 'package:money/models/migration.model.dart';
@@ -51,7 +50,7 @@ class MigrationsRepository extends BaseRepository<Migration> {
     var definition = migrationDefinitions.firstWhere((def) => def.name == name);
     try {
       await definition.up();
-      insert(Migration(name));
+      await insert(Migration(name));
       logger.d('Migration $name ran successfully');
     } catch (error) {
       logger.e('Error running migration', error: error);

@@ -1,6 +1,4 @@
-
 import 'dart:math';
-
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 
@@ -31,7 +29,7 @@ class EasyPieChart<T> extends StatelessWidget {
         color: colors[i],
         value: value(items[i]),
         radius: maxWidth != double.infinity ? maxWidth / 2 - 10 : maxHeight != double.infinity ? maxHeight / 2 - 10 : 100,
-        title: percent >= 10 ? '${percent.toStringAsFixed(0)}%' : '',
+        title: percent >= 10 ? '${ percent.toStringAsFixed(0) }%' : '',
         titleStyle: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white),
       ));
     }
@@ -105,8 +103,8 @@ class EasyPieChart<T> extends StatelessWidget {
           sections: getSections(colors),
           centerSpaceRadius: 0,
         ),
-        swapAnimationDuration: const Duration(milliseconds: 150),
-        swapAnimationCurve: Curves.linear,
+        duration: const Duration(milliseconds: 150),
+        curve: Curves.linear,
       ),
     );
   }

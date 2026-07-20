@@ -1,6 +1,4 @@
-
 import 'dart:convert';
-
 import 'package:flutter/material.dart';
 import 'package:get_it/get_it.dart';
 import 'package:intl/intl.dart';
@@ -17,7 +15,7 @@ class CurrencyMapping {
 
   @override
   String toString() {
-    return '${from.name} -> ${to.name}: ${multiplier.toStringAsFixed(2)}';
+    return '${ from.name } -> ${ to.name }: ${ multiplier.toStringAsFixed(2) }';
   }
 }
 
@@ -62,16 +60,16 @@ class UtilsService {
     var json = response.body;
     var body = jsonDecode(json);
     // Update currency mappings
-    double USDtoARS = body['blue']['value_buy'];
-    double EURtoARS = body['blue_euro']['value_buy'];
-    double EURtoUSD = 1.11;
+    double usdToArs = body['blue']['value_buy'];
+    double eurToArs = body['blue_euro']['value_buy'];
+    double eurToUsd = 1.11;
     currencyMappings = [
-      CurrencyMapping(from: Currency.ARS, to: Currency.EUR, multiplier: 1 / EURtoARS),
-      CurrencyMapping(from: Currency.ARS, to: Currency.USD, multiplier: 1 / USDtoARS),
-      CurrencyMapping(from: Currency.USD, to: Currency.ARS, multiplier: USDtoARS),
-      CurrencyMapping(from: Currency.USD, to: Currency.EUR, multiplier: 1 / EURtoUSD),
-      CurrencyMapping(from: Currency.EUR, to: Currency.ARS, multiplier: EURtoARS),
-      CurrencyMapping(from: Currency.EUR, to: Currency.USD, multiplier: EURtoUSD),
+      CurrencyMapping(from: Currency.ARS, to: Currency.EUR, multiplier: 1 / eurToArs),
+      CurrencyMapping(from: Currency.ARS, to: Currency.USD, multiplier: 1 / usdToArs),
+      CurrencyMapping(from: Currency.USD, to: Currency.ARS, multiplier: usdToArs),
+      CurrencyMapping(from: Currency.USD, to: Currency.EUR, multiplier: 1 / eurToUsd),
+      CurrencyMapping(from: Currency.EUR, to: Currency.ARS, multiplier: eurToArs),
+      CurrencyMapping(from: Currency.EUR, to: Currency.USD, multiplier: eurToUsd),
     ];
   }
 
@@ -109,7 +107,7 @@ class UtilsService {
         content: message != null ? Text(message, textAlign: TextAlign.center, style: Theme.of(context).textTheme.bodyLarge?.copyWith(fontSize: 18)) : null,
         actions: [
           TextButton(
-              style: ButtonStyle(fixedSize: MaterialStateProperty.all(const Size(100, 30))),
+              style: ButtonStyle(fixedSize: WidgetStateProperty.all(const Size(100, 30))),
               onPressed: () => Navigator.of(context).pop(false),
               child: Text(cancelText, textAlign: TextAlign.center, style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Theme.of(context).primaryColor))
           ),

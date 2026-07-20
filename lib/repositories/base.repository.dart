@@ -1,4 +1,3 @@
-
 import 'package:get_it/get_it.dart';
 import 'package:logger/logger.dart';
 import 'package:sqflite/sqflite.dart';
@@ -78,10 +77,10 @@ class ForeignKeyDefinition {
       str += ' MATCH $match';
     }
     if (deferrable != null) {
-      str += ' ${deferrable! ? '' : 'NOT '}DEFERRABLE';
+      str += ' ${ deferrable! ? '' : 'NOT ' }DEFERRABLE';
     }
     if (initialDeferred != null) {
-      str += ' INITIALLY ${initialDeferred!.name}';
+      str += ' INITIALLY ${ initialDeferred!.name }';
     }
     return str;
   }
@@ -102,7 +101,7 @@ class DatabaseColumnDefinition {
 
   @override
   String toString() {
-    String definition = '$name ${type.name}';
+    String definition = '$name ${ type.name }';
     if (primaryKey != null) {
       definition += primaryKey.toString();
     } else if (unique) {
@@ -137,7 +136,7 @@ class TableUpdateEvent<Model extends BaseModel> {
 
   @override
   String toString() {
-    return '${type.name} (id = $id)';
+    return '${ type.name } (id = $id)';
   }
 }
 
@@ -163,7 +162,8 @@ abstract class BaseRepository<Model extends BaseModel> {
 
   Future<void> initializeTable() {
     var command = 'create table $tableName (${ columnDefinitions.join(', ') })';
-    GetIt.instance.get<Logger>().d('Initializing table $command');
+    var logger = GetIt.instance.get<Logger>();
+    logger.d('Initializing table $command');
     return db.execute(command);
   }
 

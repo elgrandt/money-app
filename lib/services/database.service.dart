@@ -1,6 +1,4 @@
-
 import 'dart:async';
-
 import 'package:get_it/get_it.dart';
 import 'package:logger/logger.dart';
 import 'package:money/repositories/accounts.repository.dart';
@@ -31,7 +29,7 @@ class DatabaseService {
   DatabaseService();
 
   void createTables(Database db) {
-    _logger.i('Creando tablas');
+    _logger.i('Creating tables');
     _createdTables = MigrationsRepository(db).initializeTable();
   }
 
@@ -43,12 +41,14 @@ class DatabaseService {
         createTables(db);
       },
     ).then((db) {
-      _logger.i('Conectado a la base de datos');
+      _logger.i('Connected to the database');
       this.db = db;
       initializeRepositories();
     }).onError((error, stackTrace) {
-      _logger.e('Error conectado a la base de datos', error: error, stackTrace: stackTrace);
-      throw stackTrace;
+      _logger.e('Error connecting to the database', error: error, stackTrace: stackTrace);
+      if (!_initializedCompleter.isCompleted) {
+        _initializedCompleter.completeError(error ?? Exception('Database initialization failed'), stackTrace);
+      }
     });
   }
 
