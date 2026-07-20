@@ -77,13 +77,9 @@ class UtilsService {
   }
 
   Future<void> updateCurrencyMappings() async {
-    // Update currency mappings every hour
     var diff = DateTime.now().millisecondsSinceEpoch - lastCurrencyMappingUpdate.millisecondsSinceEpoch;
-    if (diff < 1000 * 60 * 60) return; // 1 hour
+    if (diff < const Duration(hours: 1).inMilliseconds) return;
     logger.d('Updating currency mappings');
-    // Advance the throttle before the request so failures rate-limit too: convertCurrencies
-    // fires this unawaited on every conversion, so leaving it un-advanced on error would retry
-    // (and log) on every call and stampede concurrent requests on first render.
     lastCurrencyMappingUpdate = DateTime.now();
     try {
       var url = Uri.parse('https://api.bluelytics.com.ar/v2/latest');
