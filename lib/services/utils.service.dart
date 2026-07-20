@@ -81,6 +81,10 @@ class UtilsService {
     var diff = DateTime.now().millisecondsSinceEpoch - lastCurrencyMappingUpdate.millisecondsSinceEpoch;
     if (diff < 1000 * 60 * 60) return; // 1 hour
     logger.d('Updating currency mappings');
+    // Advance the throttle before the request so failures rate-limit too: convertCurrencies
+    // fires this unawaited on every conversion, so leaving it un-advanced on error would retry
+    // (and log) on every call and stampede concurrent requests on first render.
+    lastCurrencyMappingUpdate = DateTime.now();
     try {
       var url = Uri.parse('https://api.bluelytics.com.ar/v2/latest');
       var response = await http.get(url);
@@ -90,7 +94,6 @@ class UtilsService {
       double eurToArs = body['blue_euro']['value_buy'];
       double eurToUsd = 1.11;
       applyRates(usdToArs: usdToArs, eurToArs: eurToArs, eurToUsd: eurToUsd);
-      lastCurrencyMappingUpdate = DateTime.now();
       await _databaseService.currencyRatesRepository.saveLatest(CurrencyRates(
         usdToArs: usdToArs,
         eurToArs: eurToArs,

@@ -44,8 +44,11 @@ Currencies are stored on `Account` as `TEXT` via `Currency.name` (see
 - **EUR↔USD is hardcoded** at `1.11` because no EUR→USD source was wired up; see the entry in
   [tech-debt.md](../tech-debt.md).
 - `updateCurrencyMappings` swallows network/parse errors (logs them) and advances its hourly
-  throttle only on success, so a failed fetch stays retryable within the session. Its unawaited
-  call from `convertCurrencies` is intentional background refresh and is safe offline.
+  throttle on every attempt — before the request — so a failing endpoint is retried at most once
+  per hour instead of on every call. This matters because `convertCurrencies` fires it unawaited
+  on every conversion; advancing the throttle up front both rate-limits the retries and prevents a
+  stampede of concurrent requests on first render. The unawaited call is intentional background
+  refresh and is safe offline.
 - Home renders from cached (or seed) mappings immediately and refreshes in the background, so an
   offline launch never blocks on the network.
 - **First-ever launch while offline** (no cached row): mappings stay at the `1` seed until the
