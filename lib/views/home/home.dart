@@ -50,11 +50,14 @@ class _HomeState extends State<Home> {
   }
 
   Future<void> initializeCurrencies() async {
-    await utilsService.updateCurrencyMappings();
+    await utilsService.loadCachedMappings();
     if (!mounted) return;
     setState(() {
       initializedCurrencies = true;
     });
+    await utilsService.updateCurrencyMappings();
+    if (!mounted) return;
+    setState(() {});
   }
 
   Future<void> getAccounts() async {
