@@ -7,6 +7,7 @@ import 'package:money/migrations/currency_rates_initialization.migration.dart';
 import 'package:money/migrations/example.migration.dart';
 import 'package:money/migrations/migration_definition.dart';
 import 'package:money/migrations/movements_initialization.migration.dart';
+import 'package:money/migrations/rebuild_currency_rates_buy_sell.migration.dart';
 
 List<MigrationDefinition> migrationDefinitions = [
   exampleMigration,
@@ -17,4 +18,5 @@ List<MigrationDefinition> migrationDefinitions = [
   addShowTotalFieldToAccountMigration,
   addDeletedFieldToAccountMigration,
   currencyRatesInitializationMigration,
+  rebuildCurrencyRatesBuySellMigration,
 ];
