@@ -96,6 +96,7 @@ class UtilsService {
         usdSell: usdSell,
         eurBuy: eurBuy,
         eurSell: eurSell,
+        createdAt: DateTime.now(),
         updatedAt: DateTime.now(),
       ));
       logger.d('Currency mappings updated successfully');

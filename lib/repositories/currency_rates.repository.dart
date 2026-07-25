@@ -9,6 +9,7 @@ class CurrencyRatesRepository extends BaseRepository<CurrencyRates> {
     DatabaseColumnDefinition('usdSell', DatabaseColumnType.REAL),
     DatabaseColumnDefinition('eurBuy', DatabaseColumnType.REAL),
     DatabaseColumnDefinition('eurSell', DatabaseColumnType.REAL),
+    DatabaseColumnDefinition('createdAt', DatabaseColumnType.DATE),
     DatabaseColumnDefinition('updatedAt', DatabaseColumnType.DATE),
   ];
 
@@ -24,6 +25,7 @@ class CurrencyRatesRepository extends BaseRepository<CurrencyRates> {
     map['usdSell'] = model.usdSell;
     map['eurBuy'] = model.eurBuy;
     map['eurSell'] = model.eurSell;
+    map['createdAt'] = model.createdAt.toIso8601String();
     map['updatedAt'] = model.updatedAt.toIso8601String();
     return map;
   }
@@ -35,6 +37,7 @@ class CurrencyRatesRepository extends BaseRepository<CurrencyRates> {
       usdSell: map['usdSell'] as double,
       eurBuy: map['eurBuy'] as double,
       eurSell: map['eurSell'] as double,
+      createdAt: map['createdAt'] != null ? DateTime.parse(map['createdAt'] as String) : DateTime.parse(map['updatedAt'] as String),
       updatedAt: DateTime.parse(map['updatedAt'] as String),
       id: map['id'] as int?,
     );
