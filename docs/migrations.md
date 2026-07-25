@@ -69,3 +69,15 @@ in the registry.
 3. Append the new definition to `migrationDefinitions` in `migrations_list.dart`.
 4. If the change adds a column that should also exist in a fresh database, add it to the
    repository's `static` column list too (see [data-layer.md](data-layer.md)).
+
+## Latest migration: `add_created_at_to_currency_rates`
+
+The most recently appended migration —
+[add_created_at_to_currency_rates.migration.dart](../lib/migrations/add_created_at_to_currency_rates.migration.dart)
+— adds the `createdAt DATE` column that turns `currency_rates` into an append-on-change history
+table (see [currency.md](features/currency.md)). Following the idempotency pattern above, its
+`up` guards the `ALTER TABLE currency_rates ADD createdAt DATE` against the duplicate-column
+error, then backfills existing rows with `UPDATE currency_rates SET createdAt = updatedAt WHERE
+createdAt IS NULL` so every historical row has a `createdAt`. `down` is a no-op (SQLite can't
+drop a column). The column is also declared in `CurrencyRatesRepository`'s `static` column list
+so a fresh database gets it directly.
