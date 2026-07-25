@@ -5,6 +5,13 @@ offline SQLite via `sqflite`, dependency injection via `get_it`. It tracks multi
 accounts, movements (income / expense / transfer with FX conversion), categories, statistics,
 and local backups. This file is the anchor; the detailed docs live in [docs/](docs/README.md).
 
+## Communication
+
+Respond to the user in **Spanish**. This applies only to chat responses; code, code identifiers,
+log messages, implementation plans, and documentation follow the language rules in
+[docs/conventions.md](docs/conventions.md) (design specs in `docs/superpowers/specs/` are the one
+doc exception — Spanish prose, English identifiers).
+
 ## Two rules that govern all work
 
 - **Meta-rule — never assume a pattern.** Everything here is written to a defined pattern. If a
