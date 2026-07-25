@@ -28,6 +28,10 @@ class _ExpensesByCategoryChartState extends State<ExpensesByCategoryChart> {
   String viewMode = Currency.USD.toString();
   List<String> viewModes = [...Currency.values.map((currency) => currency.toString()), 'PERCENT'];
 
+  Currency get displayCurrency {
+    return Currency.values.firstWhere((c) => c.toString() == viewMode, orElse: () => widget.account?.currency ?? Currency.USD);
+  }
+
   @override
   void initState() {
     super.initState();
@@ -52,7 +56,7 @@ class _ExpensesByCategoryChartState extends State<ExpensesByCategoryChart> {
     } else if (selectedPeriod == 'this-month') {
       startDate = DateTime(DateTime.now().year, DateTime.now().month);
     }
-    var result = await databaseService.movementsRepository.getExpensesByCategory(widget.account, selectedMovementType, startDate);
+    var result = await databaseService.movementsRepository.getExpensesByCategory(widget.account, selectedMovementType, startDate, displayCurrency);
     if (!mounted) return;
     result.sort((a, b) => (b['total'] as double).compareTo(a['total'] as double));
     setState(() {
@@ -148,8 +152,7 @@ class _ExpensesByCategoryChartState extends State<ExpensesByCategoryChart> {
       var percent = total / expensesByCategory!.map((map) => map['total'] as double).reduce((value, element) => value + element) * 100;
       text = '${ percent.toStringAsFixed(2) }%';
     } else {
-      var currency = Currency.values.firstWhere((currency) => currency.toString() == viewMode, orElse: () => Currency.USD);
-      total = utilsService.convertCurrencies(total, widget.account?.currency ?? Currency.USD, currency);
+      var currency = Currency.values.firstWhere((currency) => currency.toString() == viewMode, orElse: () => widget.account?.currency ?? Currency.USD);
       text = utilsService.beautifyCurrency(total, currency);
     }
     return TableRow(
@@ -171,6 +174,7 @@ class _ExpensesByCategoryChartState extends State<ExpensesByCategoryChart> {
               var currentIndex = viewModes.indexOf(viewMode);
               viewMode = viewModes[(currentIndex + 1) % viewModes.length];
             });
+            getExpensesByCategory();
           },
           child: Padding(
             padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),

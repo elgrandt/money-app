@@ -63,6 +63,10 @@ English code identifiers **and log messages**; Spanish (`es_AR`) for user-facing
 Code that violates this (e.g. Spanish log messages or comments) is tech debt, not a pattern to
 copy — see [tech-debt.md](tech-debt.md).
 
+**Design specs** (`docs/superpowers/specs/`) are written in **Spanish prose**, keeping code
+identifiers (file names, method/column names, symbols) in English. Everything else — implementation
+plans and the rest of the docs — stays in English.
+
 ## Dependency injection
 
 Always cache `GetIt.instance.get<X>()` in a field on the consuming class:

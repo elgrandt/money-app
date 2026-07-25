@@ -174,7 +174,7 @@ class MovementsRepository extends BaseRepository<Movement> {
     await delete(movement.id!);
   }
 
-  Future<List<Map<String, Object?>>> getExpensesByCategory(Account? account, MovementType? movementType, DateTime? startDate) async {
+  Future<List<Map<String, Object?>>> getExpensesByCategory(Account? account, MovementType? movementType, DateTime? startDate, Currency displayCurrency) async {
     var where = 'type = ?';
     List<Object?> whereArgs = [movementType!.name];
     if (account != null) {
@@ -192,7 +192,7 @@ class MovementsRepository extends BaseRepository<Movement> {
       double amount;
       if (movement.type == MovementType.ADD || movement.type == MovementType.REMOVE) {
         var movementAccount = movement.type == MovementType.ADD ? movement.target : movement.source;
-        amount = utilsService.convertCurrencies(movement.amount, movementAccount!.currency, account != null ? account.currency : Currency.USD);
+        amount = utilsService.convertCurrenciesAt(movement.amount, movementAccount!.currency, displayCurrency, movement.creationDate!);
       } else {
         amount = movement.type == MovementType.TRANSFER ? movement.amount : movement.amount * movement.conversionRate!;
       }
@@ -205,7 +205,7 @@ class MovementsRepository extends BaseRepository<Movement> {
     }).entries.map((entry) => {'category': entry.key, 'total': entry.value}).toList();
   }
 
-  Future<List<Map<String, Object?>>> getExpensesByDay(Account? account, MovementType? movementType, DateTime? startDate) async {
+  Future<List<Map<String, Object?>>> getExpensesByDay(Account? account, MovementType? movementType, DateTime? startDate, Currency displayCurrency) async {
     var where = 'type = ?';
     List<Object?> whereArgs = [movementType!.name];
     if (account != null) {
@@ -223,7 +223,7 @@ class MovementsRepository extends BaseRepository<Movement> {
       double amount;
       if (movement.type == MovementType.ADD || movement.type == MovementType.REMOVE) {
         var movementAccount = movement.type == MovementType.ADD ? movement.target : movement.source;
-        amount = utilsService.convertCurrencies(movement.amount, movementAccount!.currency, account != null ? account.currency : Currency.USD);
+        amount = utilsService.convertCurrenciesAt(movement.amount, movementAccount!.currency, displayCurrency, movement.creationDate!);
       } else {
         amount = movement.type == MovementType.TRANSFER ? movement.amount : movement.amount * movement.conversionRate!;
       }

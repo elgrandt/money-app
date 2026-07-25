@@ -35,8 +35,9 @@ a movement is implemented as remove-then-create.
   ([:165-177](../../lib/repositories/movements.repository.dart#L165-L177)).
 - `getLastMovements(account, {page, itemsPerPage})` — recent movements, optionally for one
   account, newest first ([:130-138](../../lib/repositories/movements.repository.dart#L130-L138)).
-- `getExpensesByCategory(...)` / `getExpensesByDay(...)` — aggregations for statistics
-  ([:179-239](../../lib/repositories/movements.repository.dart#L179-L239)); see
+- `getExpensesByCategory(...)` / `getExpensesByDay(...)` — aggregations for statistics; both
+  take a `displayCurrency` and convert each movement at its own `creationDate`
+  ([:179-238](../../lib/repositories/movements.repository.dart#L179-L238)); see
   [statistics.md](statistics.md).
 - `find(...)` — overridden to eagerly join source/target accounts (see
   [data-layer.md](../data-layer.md)).
@@ -64,3 +65,13 @@ a movement is implemented as remove-then-create.
   creates the new one ([new_movement.dialog.dart:76-93](../../lib/views/movements/new_movement.dialog.dart#L76-L93)).
 - Balances stay correct only because create/remove go through `updateBalance` — see the
   denormalized-balance rule in [conventions.md](../conventions.md).
+- **Date-based display conversion** — when a movement's amount is shown in a display currency
+  (the movements list, [movements_list.dart:129-141](../../lib/views/home/movements_list.dart#L129-L141))
+  or aggregated for statistics, the conversion uses `convertCurrenciesAt` at the movement's
+  `creationDate`, so a past movement keeps the value it had at the time rather than being
+  re-valued at today's rate (see [currency.md](../features/currency.md)).
+- **Background rate refresh on open** — opening the new/edit movement dialog fires
+  `utilsService.updateCurrencyMappings()` unawaited
+  ([new_movement.dialog.dart:67](../../lib/views/movements/new_movement.dialog.dart#L67)); it is
+  throttled to at most once per hour, so it records the current rates into the history table when
+  stale without blocking the dialog.

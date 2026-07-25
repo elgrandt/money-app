@@ -15,9 +15,10 @@ per-account totals pie.
 
 `MovementsRepository` — [movements.repository.dart:179-239](../../lib/repositories/movements.repository.dart#L179-L239):
 
-- `getExpensesByCategory(account, movementType, startDate)` — sums amounts per category,
-  normalizing each movement into a common currency before aggregating.
-- `getExpensesByDay(account, movementType, startDate)` — sums amounts per calendar day.
+- `getExpensesByCategory(account, movementType, startDate, displayCurrency)` — sums amounts per
+  category, converting each movement into `displayCurrency` before aggregating.
+- `getExpensesByDay(account, movementType, startDate, displayCurrency)` — sums amounts per
+  calendar day, converting each movement into `displayCurrency` before aggregating.
 
 Both filter by type, optionally by account, and optionally from a start date.
 
@@ -39,10 +40,16 @@ Both filter by type, optionally by account, and optionally from a start date.
 
 ## Edge cases
 
-- **Cross-currency aggregation** — amounts are converted to a common currency (the selected
-  account's, or USD when no account is selected) before summing, so mixed-currency data
-  aggregates sensibly
-  ([movements.repository.dart:192-207](../../lib/repositories/movements.repository.dart#L192-L207)).
+- **Cross-currency aggregation** — each movement is converted into the chosen `displayCurrency`
+  (the selected account's, or USD when no account is selected) before summing, so mixed-currency
+  data aggregates sensibly. The conversion is **date-based**: `convertCurrenciesAt` values each
+  movement at the rate that was in effect on its own `creationDate` (see
+  [currency.md](currency.md)), not at today's rate
+  ([movements.repository.dart:193-205](../../lib/repositories/movements.repository.dart#L193-L205)).
+- **Currency toggle re-queries** — the expenses-by-category table's currency/percent toggle
+  re-runs `getExpensesByCategory` with the new `displayCurrency` (each movement re-converted at
+  its own date) rather than re-converting the already-aggregated totals
+  ([expenses_by_category.dart:50-65,171-178](../../lib/views/statistics/expenses_by_category.dart#L50-L65)).
 - **Category chart movement types** — the category chart offers only income (`ADD`) and
   expense (`REMOVE`); transfers are excluded because a per-category transfer total is not
   meaningful. The day chart still offers all three types.

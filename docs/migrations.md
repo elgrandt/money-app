@@ -69,3 +69,31 @@ in the registry.
 3. Append the new definition to `migrationDefinitions` in `migrations_list.dart`.
 4. If the change adds a column that should also exist in a fresh database, add it to the
    repository's `static` column list too (see [data-layer.md](data-layer.md)).
+
+## Currency-rates history migrations
+
+Two migrations turn `currency_rates` into a dated history and seed it with past rates (see
+[currency.md](features/currency.md)):
+
+`add_created_at_to_currency_rates` —
+[add_created_at_to_currency_rates.migration.dart](../lib/migrations/add_created_at_to_currency_rates.migration.dart)
+— adds the `createdAt DATE` column. Following the idempotency pattern above, its `up` guards the
+`ALTER TABLE currency_rates ADD createdAt DATE` against the duplicate-column error, then backfills
+existing rows with `UPDATE currency_rates SET createdAt = updatedAt WHERE createdAt IS NULL` so
+every historical row has a `createdAt`. `down` is a no-op (SQLite can't drop a column). The column
+is also declared in `CurrencyRatesRepository`'s `static` column list so a fresh database gets it
+directly.
+
+`backfill_currency_rates_history` (the latest migration) —
+[backfill_currency_rates_history.migration.dart](../lib/migrations/backfill_currency_rates_history.migration.dart)
+— seeds the history with real past rates so old movements convert at their date's rate rather than
+clamping to the current one. It embeds a `_historicRates` constant (blue rates merged from the
+dollar and euro CSVs: oldest intraday quote per day, missing currency forward-filled, deduplicated
+on change, ascending). `up` reads `MIN(creationDate)` from `movements` and `MIN(createdAt)` from
+`currency_rates`, then batch-inserts the embedded change-points from the first movement up to an end
+bound — plus one row at the first-movement date carrying the rate effective then — so every
+backfilled movement resolves to a prior row. The end bound is the first recorded rate when history
+exists; when there is **no** recorded rate yet (but movements exist), it seeds the whole span up to
+the last rate in `_historicRates`. It skips only when there are no movements, or when history exists
+and the earliest movement is not older than it; and is naturally idempotent (a re-run finds the
+earliest movement no longer predates the history). `down` is a no-op.

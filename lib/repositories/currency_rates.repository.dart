@@ -9,6 +9,7 @@ class CurrencyRatesRepository extends BaseRepository<CurrencyRates> {
     DatabaseColumnDefinition('usdSell', DatabaseColumnType.REAL),
     DatabaseColumnDefinition('eurBuy', DatabaseColumnType.REAL),
     DatabaseColumnDefinition('eurSell', DatabaseColumnType.REAL),
+    DatabaseColumnDefinition('createdAt', DatabaseColumnType.DATE),
     DatabaseColumnDefinition('updatedAt', DatabaseColumnType.DATE),
   ];
 
@@ -24,6 +25,7 @@ class CurrencyRatesRepository extends BaseRepository<CurrencyRates> {
     map['usdSell'] = model.usdSell;
     map['eurBuy'] = model.eurBuy;
     map['eurSell'] = model.eurSell;
+    map['createdAt'] = model.createdAt.toIso8601String();
     map['updatedAt'] = model.updatedAt.toIso8601String();
     return map;
   }
@@ -35,22 +37,27 @@ class CurrencyRatesRepository extends BaseRepository<CurrencyRates> {
       usdSell: map['usdSell'] as double,
       eurBuy: map['eurBuy'] as double,
       eurSell: map['eurSell'] as double,
+      createdAt: map['createdAt'] != null ? DateTime.parse(map['createdAt'] as String) : DateTime.parse(map['updatedAt'] as String),
       updatedAt: DateTime.parse(map['updatedAt'] as String),
       id: map['id'] as int?,
     );
   }
 
   Future<CurrencyRates?> findLatest() async {
-    var results = await find(orderBy: 'id DESC', limit: 1);
+    var results = await find(orderBy: 'createdAt DESC, id DESC', limit: 1);
     if (results.isNotEmpty) return results.first;
     return null;
   }
 
-  Future<void> saveLatest(CurrencyRates rates) async {
-    var existing = await findLatest();
-    if (existing != null) {
-      rates.id = existing.id;
-      await update(rates);
+  Future<List<CurrencyRates>> findAllSorted() async {
+    return find(orderBy: 'createdAt ASC');
+  }
+
+  Future<void> record(CurrencyRates rates) async {
+    var latest = await findLatest();
+    if (latest != null && latest.usdBuy == rates.usdBuy && latest.usdSell == rates.usdSell && latest.eurBuy == rates.eurBuy && latest.eurSell == rates.eurSell) {
+      latest.updatedAt = rates.updatedAt;
+      await update(latest);
     } else {
       await insert(rates);
     }

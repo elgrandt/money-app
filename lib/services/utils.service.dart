@@ -40,6 +40,7 @@ class UtilsService {
     CurrencyMapping(from: Currency.EUR, to: Currency.USD, multiplier: 1),
   ];
   var lastCurrencyMappingUpdate = DateTime.fromMillisecondsSinceEpoch(0);
+  var rateHistory = <CurrencyRates>[];
   var logger = GetIt.instance.get<Logger>();
 
   static List<CurrencyConfig> currencyConfigs = [
@@ -52,8 +53,8 @@ class UtilsService {
 
   DatabaseService get _databaseService => GetIt.instance.get<DatabaseService>();
 
-  void applyRates({ required double usdBuy, required double usdSell, required double eurBuy, required double eurSell }) {
-    currencyMappings = [
+  List<CurrencyMapping> buildMappings({ required double usdBuy, required double usdSell, required double eurBuy, required double eurSell }) {
+    return [
       CurrencyMapping(from: Currency.ARS, to: Currency.EUR, multiplier: 1 / eurSell),
       CurrencyMapping(from: Currency.ARS, to: Currency.USD, multiplier: 1 / usdSell),
       CurrencyMapping(from: Currency.USD, to: Currency.ARS, multiplier: usdBuy),
@@ -61,6 +62,15 @@ class UtilsService {
       CurrencyMapping(from: Currency.EUR, to: Currency.ARS, multiplier: eurBuy),
       CurrencyMapping(from: Currency.EUR, to: Currency.USD, multiplier: eurBuy / usdSell),
     ];
+  }
+
+  void applyRates({ required double usdBuy, required double usdSell, required double eurBuy, required double eurSell }) {
+    currencyMappings = buildMappings(usdBuy: usdBuy, usdSell: usdSell, eurBuy: eurBuy, eurSell: eurSell);
+  }
+
+  Future<void> loadRateHistory() async {
+    await _databaseService.initialized;
+    rateHistory = await _databaseService.currencyRatesRepository.findAllSorted();
   }
 
   Future<void> loadCachedMappings() async {
@@ -71,6 +81,7 @@ class UtilsService {
         applyRates(usdBuy: cached.usdBuy, usdSell: cached.usdSell, eurBuy: cached.eurBuy, eurSell: cached.eurSell);
         logger.d('Loaded cached currency mappings: $cached');
       }
+      await loadRateHistory();
     } catch (error, stackTrace) {
       logger.e('Error loading cached currency mappings', error: error, stackTrace: stackTrace);
     }
@@ -91,13 +102,15 @@ class UtilsService {
       double eurBuy = body['blue_euro']['value_buy'];
       double eurSell = body['blue_euro']['value_sell'];
       applyRates(usdBuy: usdBuy, usdSell: usdSell, eurBuy: eurBuy, eurSell: eurSell);
-      await _databaseService.currencyRatesRepository.saveLatest(CurrencyRates(
+      await _databaseService.currencyRatesRepository.record(CurrencyRates(
         usdBuy: usdBuy,
         usdSell: usdSell,
         eurBuy: eurBuy,
         eurSell: eurSell,
+        createdAt: DateTime.now(),
         updatedAt: DateTime.now(),
       ));
+      await loadRateHistory();
       logger.d('Currency mappings updated successfully');
     } catch (error, stackTrace) {
       logger.e('Error updating currency mappings', error: error, stackTrace: stackTrace);
@@ -113,6 +126,32 @@ class UtilsService {
       }
     }
     return amount;
+  }
+
+  double convertCurrenciesAt(double amount, Currency from, Currency to, DateTime date) {
+    if (from == to) return amount;
+    var rates = _resolveRatesAt(date);
+    if (rates == null) return amount;
+    var mappings = buildMappings(usdBuy: rates.usdBuy, usdSell: rates.usdSell, eurBuy: rates.eurBuy, eurSell: rates.eurSell);
+    for (var mapping in mappings) {
+      if (mapping.from == from && mapping.to == to) {
+        return amount * mapping.multiplier;
+      }
+    }
+    return amount;
+  }
+
+  CurrencyRates? _resolveRatesAt(DateTime date) {
+    if (rateHistory.isEmpty) return null;
+    CurrencyRates? resolved;
+    for (var rates in rateHistory) {
+      if (!rates.createdAt.isAfter(date)) {
+        resolved = rates;
+      } else {
+        break;
+      }
+    }
+    return resolved ?? rateHistory.first;
   }
 
   String beautifyCurrency(double number, Currency currency) {

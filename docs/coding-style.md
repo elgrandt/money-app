@@ -21,6 +21,23 @@ by role, DI, storage) see [conventions.md](conventions.md); for visual widgets s
 - Use `const SizedBox(height: N)` / `SizedBox(width: N)` for spacing inside `Column`/`Row`.
 - **String interpolation always uses spaces inside the braces — `${ expr }`** — even for
   simple expressions.
+- **Multi-line conditions:** keep an `if` / `while` condition on a **single line** whenever it
+  fits — even a chain of `&&`/`||`. Only when it is genuinely too long to fit, break it with the
+  opening `(` at the end of the keyword line, one operand per indented line, and the closing
+  `) {` on its **own line aligned with the `if`** — never leave `) {` dangling at the end of the
+  last operand:
+
+  ```dart
+  if (
+    latest != null &&
+    latest.usdBuy == rates.usdBuy &&
+    latest.usdSell == rates.usdSell &&
+    latest.eurBuy == rates.eurBuy &&
+    latest.eurSell == rates.eurSell
+  ) {
+    ...
+  }
+  ```
 
 ## Comments
 

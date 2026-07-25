@@ -23,13 +23,33 @@ All currency logic lives in `UtilsService` —
   direction-based: ARS→foreign uses `1/…Sell` (you sell ARS at the sell rate to acquire the
   foreign currency), foreign→ARS uses `…Buy`, and USD↔EUR is derived through ARS
   (`usdBuy/eurSell` for USD→EUR, `eurBuy/usdSell` for EUR→USD).
-- Rates are persisted in a single-row `currency_rates` table
+- Rates are persisted in the `currency_rates` table
   ([currency_rates.repository.dart](../../lib/repositories/currency_rates.repository.dart)): the
-  raw source values (`usdBuy`, `usdSell`, `eurBuy`, `eurSell`) plus `updatedAt`. On a successful
-  fetch the row is upserted via `saveLatest`; on startup `loadCachedMappings()` reads it and
-  re-derives the pairwise multipliers, so conversions are correct offline and across restarts.
+  raw source values (`usdBuy`, `usdSell`, `eurBuy`, `eurSell`) plus `createdAt` and `updatedAt`.
+  This is an **append-on-change history** table: `record` compares the fetched values against
+  `findLatest` and only inserts a new row when one of the four rates changed; otherwise it just
+  bumps `updatedAt` on the existing latest row (dedup-on-change). So each row marks the moment a
+  rate changed (`createdAt`) and when it was last seen unchanged (`updatedAt`). `findLatest` orders
+  by `createdAt DESC` (not by `id`), so rows inserted out of chronological order — e.g. the
+  historical rows seeded by the `backfill_currency_rates_history` migration — never shadow the
+  current rate.
+- On startup `loadCachedMappings()` reads `findLatest` and re-derives the current pairwise
+  multipliers (via `buildMappings`), so live conversions are correct offline and across restarts.
+  It also calls `loadRateHistory()`, which loads the full history (`findAllSorted`, ascending by
+  `createdAt`) into the in-memory `rateHistory` list; the history is refreshed after every
+  successful fetch.
 - `convertCurrencies(amount, from, to)` — returns `amount` when `from == to`, otherwise applies
-  the mapping ([:105-114](../../lib/services/utils.service.dart#L105-L114)).
+  the current (live) mapping ([:120-129](../../lib/services/utils.service.dart#L120-L129)). Used
+  for balances and totals, which are always valued at today's rates.
+- `convertCurrenciesAt(amount, from, to, date)` — the **historical** conversion. Resolves the
+  rates row applicable at `date` from `rateHistory` (the latest row whose `createdAt <= date`;
+  if `date` predates all history, the earliest row; if the history is empty, defaults to 1:1 and
+  returns the amount unchanged), builds that row's mappings, and applies the pairwise multiplier
+  ([:131-155](../../lib/services/utils.service.dart#L131-L155)). Used wherever a *past* movement's
+  amount is displayed or aggregated (movements list, statistics), so it is valued at the rate that
+  was in effect on its `creationDate` rather than today's.
+- `buildMappings({ usdBuy, usdSell, eurBuy, eurSell })` — derives the six pairwise multipliers
+  from a set of raw rates; shared by `applyRates` (live) and `convertCurrenciesAt` (historical).
 - `beautifyCurrency(number, currency)` — locale-aware (`es_AR`) formatting with the currency
   symbol; used everywhere money is displayed.
 - `getCurrencyIcon` / `getCurrencySymbol` / `currencyConfigs` — per-currency icon and symbol.
@@ -69,3 +89,16 @@ Currencies are stored on `Account` as `TEXT` via `Currency.name` (see
   for that session. Self-corrects on the next launch, once the fetched row is cached — accepted as
   a one-time upgrade quirk.
 - If a mapping for a pair is missing, `convertCurrencies` returns the amount unchanged.
+- **Historical conversion before any history exists** — if `rateHistory` is empty (e.g. a
+  fresh install that has never fetched, or an offline first launch), `convertCurrenciesAt`
+  falls back to 1:1 and returns the amount unchanged, just like the live `1` seed. Once the
+  first row is recorded it self-corrects.
+- **Movements older than the first recorded rate** — `convertCurrenciesAt` clamps to the
+  earliest history row, so pre-history movements are valued at the oldest known rate rather
+  than 1:1.
+- **Backfilled history** — on existing databases the `backfill_currency_rates_history` migration
+  seeds `currency_rates` with real past blue rates (merged from CSVs, deduplicated on change) for
+  the span from the earliest movement up to the first recorded rate — or, when no rate has been
+  recorded yet, up to the last rate in the embedded series — so old movements convert at their
+  date's actual rate. Movements predating the CSV coverage (before 25/07/2023) still clamp to the
+  earliest seeded row (see [migrations.md](../migrations.md)).
