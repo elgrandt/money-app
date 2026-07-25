@@ -90,9 +90,13 @@ class _ExchangeRatesTableState extends State<ExchangeRatesTable> {
             columnWidths: const {
               0: FlexColumnWidth(1),
               1: IntrinsicColumnWidth(),
+              2: IntrinsicColumnWidth(),
             },
             defaultVerticalAlignment: TableCellVerticalAlignment.middle,
-            children: currencies.map((currency) => buildRateRow(context, currency)).toList(),
+            children: [
+              buildHeaderRow(context),
+              ...currencies.map((currency) => buildRateRow(context, currency)),
+            ],
           ),
           const SizedBox(height: 15),
           Text('Última actualización: ${ lastUpdateText() }', style: TextStyle(fontSize: 14, color: Colors.grey.shade600)),
@@ -101,11 +105,27 @@ class _ExchangeRatesTableState extends State<ExchangeRatesTable> {
     );
   }
 
+  TableRow buildHeaderRow(BuildContext context) {
+    var headerStyle = TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Colors.grey.shade600);
+    return TableRow(
+      children: [
+        const SizedBox.shrink(),
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+          child: Text('Compra', style: headerStyle, textAlign: TextAlign.end),
+        ),
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+          child: Text('Venta', style: headerStyle, textAlign: TextAlign.end),
+        ),
+      ],
+    );
+  }
+
   TableRow buildRateRow(BuildContext context, Currency currency) {
     var pair = ratesFor(currency);
-    var text = pair == null
-      ? '—/—'
-      : '${ utilsService.beautifyCurrency(pair.$1, Currency.ARS) }/${ utilsService.beautifyCurrency(pair.$2, Currency.ARS) }';
+    var compra = pair == null ? '—' : utilsService.beautifyCurrency(pair.$1, Currency.ARS);
+    var venta = pair == null ? '—' : utilsService.beautifyCurrency(pair.$2, Currency.ARS);
     return TableRow(
       children: [
         Padding(
@@ -120,7 +140,11 @@ class _ExchangeRatesTableState extends State<ExchangeRatesTable> {
         ),
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-          child: Text(text, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold), textAlign: TextAlign.end),
+          child: Text(compra, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold), textAlign: TextAlign.end),
+        ),
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+          child: Text(venta, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold), textAlign: TextAlign.end),
         ),
       ],
     );

@@ -43,10 +43,10 @@ Currencies are stored on `Account` as `TEXT` via `Currency.name` (see
   currency picker (a `ButtonSelector` of currency icon + name), used to choose the display
   currency on the home tabs, statistics, and the new-account dialog.
 - [exchange_rates.dart](../../lib/views/home/exchange_rates.dart) — the dashboard's "Tasas de
-  cambio" table: shows compra/venta per currency (`value_buy`/`value_sell`, e.g. `$1.504/$1.538`)
-  read straight from `currencyRatesRepository.findLatest`, falling back to `—/—` before the first
-  cached row exists, plus the last-update timestamp (shows `Nunca` when no row exists yet).
-  Refreshes on the repository's `change` event.
+  cambio" table: a row per currency with **Compra** (`value_buy`) and **Venta** (`value_sell`)
+  columns under a header row, read straight from `currencyRatesRepository.findLatest` (each cell
+  falls back to `—` before the first cached row exists), plus the last-update timestamp (shows
+  `Nunca` when no row exists yet). Refreshes on the repository's `change` event.
 
 ## Edge cases / debt
 
