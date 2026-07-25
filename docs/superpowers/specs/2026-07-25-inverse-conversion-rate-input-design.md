@@ -73,11 +73,15 @@ Se reemplaza el campo mutable `conversionRate` por el **valor crudo tipeado** (s
 deriva el rate efectivo mediante un getter:
 
 ```dart
-double rawConversionRate = 1;
+double rawConversionRate = 0;
 
 double get conversionRate =>
     rawConversionRate == 0 ? 0 : (isRateInverse ? 1 / rawConversionRate : rawConversionRate);
 ```
+
+El default es `0` (no `1`): así el usuario está obligado a cargar la tasa real y no puede
+submitear con un `1` olvidado. Es el mismo patrón del campo de monto, que también arranca en `0`
+y cuyo validator rechaza el `0`.
 
 - `onChanged` del campo de tasa solo setea `rawConversionRate` (parseando el masked input y
   dividiendo por `100`).
@@ -88,8 +92,9 @@ double get conversionRate =>
 
 ### Campo y label dinámicos
 
-- Controller: `MoneyMaskedTextController(... precision: 6 ...)` → `precision: 2`, con
-  `initialValue: 1`. El `onChanged` pasa de dividir por `1000000` a dividir por `100`.
+- Controller: `MoneyMaskedTextController(... precision: 6, initialValue: 1 ...)` →
+  `precision: 2, initialValue: 0`. El `onChanged` pasa de dividir por `1000000` a dividir por
+  `100`.
 - **Modo directo** (destino más débil, ej. USD→ARS): prefix `Tasa de conversión `, suffix `x`
   (como hoy).
 - **Modo inverso** (destino más fuerte, ej. ARS→USD): prefix `Tasa de conversión 1 ÷ `, sin
@@ -121,8 +126,9 @@ movimiento originalmente.
   ARS→USD caería en modo directo (número chico). Es el mismo escenario donde la app ya muestra
   conversiones 1:1; se autocorrige cuando cargan las tasas. Limitación aceptada, coherente con
   los edge cases de currency.
-- **Campo vacío / cero:** el validator ya bloquea el submit (no vacío, parseable, ≠ 0). El getter
-  devuelve `0` cuando `rawConversionRate == 0` para no propagar `1/0` al preview.
+- **Campo vacío / cero:** el default es `0` y el validator bloquea el submit (no vacío,
+  parseable, ≠ 0), así que un valor sin cargar no se puede guardar. El getter devuelve `0` cuando
+  `rawConversionRate == 0` para no propagar `1/0` al preview.
 - **USD↔EUR (derivado vía ARS):** exactamente una de las dos direcciones da `< 1`
   (`usdBuy/eurSell` para USD→EUR, `eurBuy/usdSell` para EUR→USD), así que el par queda
   consistente: una dirección directa, la otra inversa.
@@ -137,7 +143,8 @@ movimiento originalmente.
 
 ## Fuera de alcance
 
-- Prellenar el campo con la cotización de mercado actual (hoy el default es `1`; se mantiene).
+- Prellenar el campo con la cotización de mercado actual (el default pasa a ser `0` para forzar
+  la carga manual del valor real).
 - Cambios de esquema/migración.
 - Cualquier cambio en cómo se convierten balances/estadísticas (usan `conversionRate` guardado,
   que no cambia de semántica).
