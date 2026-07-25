@@ -755,16 +755,14 @@ var backfillCurrencyRatesHistoryMigration = MigrationDefinition(
       logger.d('No movements found; skipping currency rates backfill');
       return;
     }
+    var firstMovementDate = DateTime.parse(movementMin);
+
     var historyResult = await db.rawQuery('SELECT MIN(createdAt) AS minDate FROM currency_rates');
     var historyMin = historyResult.first['minDate'] as String?;
-    if (historyMin == null) {
-      logger.d('No currency rates history yet; skipping backfill');
-      return;
-    }
-
-    var firstMovementDate = DateTime.parse(movementMin);
-    var firstHistoryDate = DateTime.parse(historyMin);
-    if (!firstMovementDate.isBefore(firstHistoryDate)) {
+    // End of the range to seed: the earliest recorded rate when history exists,
+    // otherwise null = seed the whole span up to the last rate in _historicRates.
+    var firstHistoryDate = historyMin != null ? DateTime.parse(historyMin) : null;
+    if (firstHistoryDate != null && !firstMovementDate.isBefore(firstHistoryDate)) {
       logger.d('First movement is not older than the rate history; skipping backfill');
       return;
     }
@@ -778,7 +776,7 @@ var backfillCurrencyRatesHistoryMigration = MigrationDefinition(
         effective = rate;
         continue;
       }
-      if (!rateDate.isBefore(firstHistoryDate)) {
+      if (firstHistoryDate != null && !rateDate.isBefore(firstHistoryDate)) {
         break;
       }
       batch.insert('currency_rates', _rateMap(rate.$1, rate.$2, rate.$3, rate.$4, rate.$5));

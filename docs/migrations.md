@@ -90,9 +90,10 @@ directly.
 clamping to the current one. It embeds a `_historicRates` constant (blue rates merged from the
 dollar and euro CSVs: oldest intraday quote per day, missing currency forward-filled, deduplicated
 on change, ascending). `up` reads `MIN(creationDate)` from `movements` and `MIN(createdAt)` from
-`currency_rates`; if the earliest movement predates the earliest recorded rate, it batch-inserts
-the embedded change-points for the range `[first movement, first history)` — plus one row at the
-first-movement date carrying the rate effective then — so every backfilled movement resolves to a
-prior row. It skips when there are no movements, no history, or the movement is not older, and is
-naturally idempotent (a re-run finds the earliest movement no longer predates the history). `down`
-is a no-op.
+`currency_rates`, then batch-inserts the embedded change-points from the first movement up to an end
+bound — plus one row at the first-movement date carrying the rate effective then — so every
+backfilled movement resolves to a prior row. The end bound is the first recorded rate when history
+exists; when there is **no** recorded rate yet (but movements exist), it seeds the whole span up to
+the last rate in `_historicRates`. It skips only when there are no movements, or when history exists
+and the earliest movement is not older than it; and is naturally idempotent (a re-run finds the
+earliest movement no longer predates the history). `down` is a no-op.

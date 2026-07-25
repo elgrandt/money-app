@@ -98,6 +98,7 @@ Currencies are stored on `Account` as `TEXT` via `Currency.name` (see
   than 1:1.
 - **Backfilled history** — on existing databases the `backfill_currency_rates_history` migration
   seeds `currency_rates` with real past blue rates (merged from CSVs, deduplicated on change) for
-  the span between the earliest movement and the first recorded rate, so old movements convert at
-  their date's actual rate. Movements predating the CSV coverage (before 25/07/2023) still clamp
-  to the earliest seeded row (see [migrations.md](../migrations.md)).
+  the span from the earliest movement up to the first recorded rate — or, when no rate has been
+  recorded yet, up to the last rate in the embedded series — so old movements convert at their
+  date's actual rate. Movements predating the CSV coverage (before 25/07/2023) still clamp to the
+  earliest seeded row (see [migrations.md](../migrations.md)).
