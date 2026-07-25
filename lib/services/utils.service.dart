@@ -91,7 +91,7 @@ class UtilsService {
       double eurBuy = body['blue_euro']['value_buy'];
       double eurSell = body['blue_euro']['value_sell'];
       applyRates(usdBuy: usdBuy, usdSell: usdSell, eurBuy: eurBuy, eurSell: eurSell);
-      await _databaseService.currencyRatesRepository.saveLatest(CurrencyRates(
+      await _databaseService.currencyRatesRepository.record(CurrencyRates(
         usdBuy: usdBuy,
         usdSell: usdSell,
         eurBuy: eurBuy,

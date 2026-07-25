@@ -49,11 +49,15 @@ class CurrencyRatesRepository extends BaseRepository<CurrencyRates> {
     return null;
   }
 
-  Future<void> saveLatest(CurrencyRates rates) async {
-    var existing = await findLatest();
-    if (existing != null) {
-      rates.id = existing.id;
-      await update(rates);
+  Future<void> record(CurrencyRates rates) async {
+    var latest = await findLatest();
+    if (latest != null &&
+        latest.usdBuy == rates.usdBuy &&
+        latest.usdSell == rates.usdSell &&
+        latest.eurBuy == rates.eurBuy &&
+        latest.eurSell == rates.eurSell) {
+      latest.updatedAt = rates.updatedAt;
+      await update(latest);
     } else {
       await insert(rates);
     }
