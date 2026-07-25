@@ -59,6 +59,13 @@ a movement is implemented as remove-then-create.
   shows a conversion-rate field, `conversionRate` is stored, and the target is credited
   `amount * conversionRate`; the source is debited `amount`
   ([movements.repository.dart:146-161](../../lib/repositories/movements.repository.dart#L146-L161)).
+  The rate is always **entered in the ≥ 1 direction** — the price of the stronger currency (e.g.
+  "the dollar at 1485"). When the target currency is stronger than the source (detected via
+  `convertCurrencies(1, source, target) < 1`) the field shows `Tasa de conversión 1 ÷ X` and
+  stores `1/X` as `conversionRate`; otherwise it shows `Tasa de conversión X` and stores `X`
+  directly. The input uses 2 decimals and defaults to `0`, so the real rate must be entered (the
+  validator rejects `0`). Editing re-derives the displayed value from the stored `conversionRate`
+  using the same direction check. See [currency.md](currency.md).
 - **Source/target by type** — ADD has only a target, REMOVE only a source, TRANSFER both
   ([:145-147](../../lib/repositories/movements.repository.dart#L145-L147)).
 - **Editing = remove + create** — the edit path removes the original (reversing balances) then
