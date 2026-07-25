@@ -49,6 +49,10 @@ class CurrencyRatesRepository extends BaseRepository<CurrencyRates> {
     return null;
   }
 
+  Future<List<CurrencyRates>> findAllSorted() async {
+    return find(orderBy: 'createdAt ASC');
+  }
+
   Future<void> record(CurrencyRates rates) async {
     var latest = await findLatest();
     if (latest != null &&
