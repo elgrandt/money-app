@@ -40,7 +40,10 @@ All currency logic lives in `UtilsService` —
   successful fetch.
 - `convertCurrencies(amount, from, to)` — returns `amount` when `from == to`, otherwise applies
   the current (live) mapping ([:120-129](../../lib/services/utils.service.dart#L120-L129)). Used
-  for balances and totals, which are always valued at today's rates.
+  for balances and totals, which are always valued at today's rates. The new/edit movement dialog
+  also uses it to choose the conversion-rate input direction: when
+  `convertCurrencies(1, source, target) < 1` the target currency is stronger, so the rate is
+  entered inverted as `1 ÷ X` (see [movements.md](movements.md)).
 - `convertCurrenciesAt(amount, from, to, date)` — the **historical** conversion. Resolves the
   rates row applicable at `date` from `rateHistory` (the latest row whose `createdAt <= date`;
   if `date` predates all history, the earliest row; if the history is empty, defaults to 1:1 and

@@ -33,7 +33,7 @@ class _NewMovementDialogState extends State<NewMovementDialog> {
   final _formKey = GlobalKey<FormState>();
   MovementType movementType = MovementType.REMOVE;
   double amount = 0;
-  double conversionRate = 1;
+  double rawConversionRate = 0;
   String? selectedCategory;
   late Account source;
   late Account target;
@@ -41,7 +41,7 @@ class _NewMovementDialogState extends State<NewMovementDialog> {
   List<Account>? accounts;
 
   final amountInputController = MoneyMaskedTextController(decimalSeparator: ',', thousandSeparator: '.', precision: 2, initialValue: 0);
-  final conversionRateInputController = MoneyMaskedTextController(decimalSeparator: ',', thousandSeparator: '.', precision: 6, initialValue: 1);
+  final conversionRateInputController = MoneyMaskedTextController(decimalSeparator: ',', thousandSeparator: '.', precision: 2, initialValue: 0);
   final descriptionInputController = TextEditingController();
   var databaseService = GetIt.instance.get<DatabaseService>();
   var utilsService = GetIt.instance.get<UtilsService>();
@@ -55,6 +55,16 @@ class _NewMovementDialogState extends State<NewMovementDialog> {
 
   get isEditing {
     return widget.movement != null;
+  }
+
+  bool get isRateInverse {
+    return source.currency != target.currency &&
+        utilsService.convertCurrencies(1, source.currency, target.currency) < 1;
+  }
+
+  double get conversionRate {
+    if (rawConversionRate == 0) return 0;
+    return isRateInverse ? 1 / rawConversionRate : rawConversionRate;
   }
 
   @override
@@ -171,8 +181,9 @@ class _NewMovementDialogState extends State<NewMovementDialog> {
       target = movement.target ?? movement.source!;
       creationDate = movement.creationDate ?? DateTime.now();
       descriptionInputController.text = movement.description;
-      conversionRate = movement.conversionRate ?? 1;
-      conversionRateInputController.text = conversionRate.toStringAsFixed(6);
+      var storedRate = movement.conversionRate ?? 1;
+      rawConversionRate = isRateInverse ? 1 / storedRate : storedRate;
+      conversionRateInputController.text = rawConversionRate.toStringAsFixed(2);
       selectedCategory = movement.category;
     });
   }
@@ -322,11 +333,16 @@ class _NewMovementDialogState extends State<NewMovementDialog> {
           keyboardType: TextInputType.number,
           style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, height: 1),
           controller: conversionRateInputController,
-          decoration: const InputDecoration(
+          decoration: InputDecoration(
             border: InputBorder.none,
-            prefix: Text('Tasa de conversión ', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.black)),
-            suffix: Text('x', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.black)),
-            errorStyle: TextStyle(height: 0, fontSize: 0),
+            prefix: Text(
+              isRateInverse ? 'Tasa de conversión 1 ÷ ' : 'Tasa de conversión ',
+              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.black),
+            ),
+            suffix: isRateInverse
+                ? null
+                : const Text('x', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.black)),
+            errorStyle: const TextStyle(height: 0, fontSize: 0),
           ),
           validator: (value) {
             if (value == null) return '';
@@ -344,7 +360,7 @@ class _NewMovementDialogState extends State<NewMovementDialog> {
               value = value.replaceAll('.', '');
               value = value.replaceAll(' ', '');
               if (double.tryParse(value) != null) {
-                conversionRate = double.tryParse(value)! / 1000000;
+                rawConversionRate = double.tryParse(value)! / 100;
               }
             });
           },
