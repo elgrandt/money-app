@@ -64,6 +64,7 @@ class _NewMovementDialogState extends State<NewMovementDialog> {
     getCategories();
     watchCategories();
     getAccounts();
+    utilsService.updateCurrencyMappings();
   }
 
   @override
