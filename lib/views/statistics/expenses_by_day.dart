@@ -55,7 +55,7 @@ class _ExpensesByDayChartState extends State<ExpensesByDayChart> {
     } else if (selectedPeriod == 'year') {
       startDate = DateTime.now().subtract(const Duration(days: 365));
     }
-    var result = await databaseService.movementsRepository.getExpensesByDay(widget.account, selectedMovementType, startDate);
+    var result = await databaseService.movementsRepository.getExpensesByDay(widget.account, selectedMovementType, startDate, widget.account?.currency ?? Currency.USD);
     if (!mounted) return;
     if (result.isNotEmpty) {
       doCalculations(result);
