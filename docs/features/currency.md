@@ -29,7 +29,10 @@ All currency logic lives in `UtilsService` —
   This is an **append-on-change history** table: `record` compares the fetched values against
   `findLatest` and only inserts a new row when one of the four rates changed; otherwise it just
   bumps `updatedAt` on the existing latest row (dedup-on-change). So each row marks the moment a
-  rate changed (`createdAt`) and when it was last seen unchanged (`updatedAt`).
+  rate changed (`createdAt`) and when it was last seen unchanged (`updatedAt`). `findLatest` orders
+  by `createdAt DESC` (not by `id`), so rows inserted out of chronological order — e.g. the
+  historical rows seeded by the `backfill_currency_rates_history` migration — never shadow the
+  current rate.
 - On startup `loadCachedMappings()` reads `findLatest` and re-derives the current pairwise
   multipliers (via `buildMappings`), so live conversions are correct offline and across restarts.
   It also calls `loadRateHistory()`, which loads the full history (`findAllSorted`, ascending by
@@ -93,3 +96,8 @@ Currencies are stored on `Account` as `TEXT` via `Currency.name` (see
 - **Movements older than the first recorded rate** — `convertCurrenciesAt` clamps to the
   earliest history row, so pre-history movements are valued at the oldest known rate rather
   than 1:1.
+- **Backfilled history** — on existing databases the `backfill_currency_rates_history` migration
+  seeds `currency_rates` with real past blue rates (merged from CSVs, deduplicated on change) for
+  the span between the earliest movement and the first recorded rate, so old movements convert at
+  their date's actual rate. Movements predating the CSV coverage (before 25/07/2023) still clamp
+  to the earliest seeded row (see [migrations.md](../migrations.md)).

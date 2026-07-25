@@ -44,7 +44,7 @@ class CurrencyRatesRepository extends BaseRepository<CurrencyRates> {
   }
 
   Future<CurrencyRates?> findLatest() async {
-    var results = await find(orderBy: 'id DESC', limit: 1);
+    var results = await find(orderBy: 'createdAt DESC, id DESC', limit: 1);
     if (results.isNotEmpty) return results.first;
     return null;
   }

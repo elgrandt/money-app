@@ -3,6 +3,7 @@ import 'package:money/migrations/add_created_at_to_currency_rates.migration.dart
 import 'package:money/migrations/add_deleted_field_to_account.migration.dart';
 import 'package:money/migrations/add_sort_index_field_to_account.migration.dart';
 import 'package:money/migrations/add_showTotal_field_to_account.migration.dart';
+import 'package:money/migrations/backfill_currency_rates_history.migration.dart';
 import 'package:money/migrations/categories_initialization.migration.dart';
 import 'package:money/migrations/currency_rates_initialization.migration.dart';
 import 'package:money/migrations/example.migration.dart';
@@ -21,4 +22,5 @@ List<MigrationDefinition> migrationDefinitions = [
   currencyRatesInitializationMigration,
   rebuildCurrencyRatesBuySellMigration,
   addCreatedAtToCurrencyRatesMigration,
+  backfillCurrencyRatesHistoryMigration,
 ];
