@@ -98,6 +98,20 @@ tal cual.
   conversiones de saldos), evitando una estampida de requests al iterar muchos movimientos en las
   estadísticas.
 
+## Frescura de tasas al crear/editar movimientos
+
+Al abrir el diálogo de crear/editar movimiento (`new_movement.dialog.dart`, en `initState`) se dispara
+un `updateCurrencyMappings()` **unawaited y respetando el throttle de 1h**. Así, mientras el usuario
+completa los datos, el historial se refresca en segundo plano y un movimiento con `creationDate = now`
+resuelve a la tasa más reciente disponible.
+
+- No bloquea el guardado: si el usuario guarda muy rápido o está offline, el movimiento usa la última
+  tasa conocida (nunca se espera a la red).
+- El throttle de 1h hace que la llamada coalesca con el resto de los refreshes y evita pegarle a la API
+  si ya hubo un fetch hace poco; el blue se mueve lento, así que 1h es fresco suficiente.
+- Con el dedup-on-change, abrir/cerrar el diálogo repetidamente no infla la tabla (si el rate no
+  cambió, solo se toca `updatedAt`).
+
 ## Cambios en los call-sites de lectura/visualización
 
 Pasar estas conversiones a nivel de movimiento de `convertCurrencies(...)` a
@@ -164,5 +178,5 @@ Nueva `lib/migrations/add_created_at_to_currency_rates.migration.dart`, agregada
   `rateHistory`, regla de resolución.
 - `docs/features/statistics.md` — conversión histórica por movimiento y el toggle con re-query.
 - `docs/features/movements.md` — aclarar que las conversiones de visualización/agregación son por
-  fecha.
+  fecha, y el refresh de tasas (throttled) al abrir el diálogo de crear/editar.
 - `docs/migrations.md` — la entrada de la nueva migración (vía la receta).
