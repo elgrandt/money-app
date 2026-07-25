@@ -1,156 +1,168 @@
-# Design: Historical exchange rates for movements
+# Diseño: tasas de cambio históricas para movimientos
 
-**Date:** 2026-07-25
-**Status:** Approved (pending spec review)
+**Fecha:** 2026-07-25
+**Estado:** Aprobado (pendiente de revisión del spec)
 **Branch:** `feature/movement-historical-rates`
 
-## Problem
+## Problema
 
-Every cross-currency figure in the app is computed with a single **global live rate**
-(`UtilsService.currencyMappings`, derived from the latest bluelytics "blue" rate and cached in a
-one-row `currency_rates` table). Conversions are therefore not temporal: a movement created two
-years ago is displayed/aggregated at *today's* rate, which misrepresents what it was worth when it
-happened.
+Toda cifra multi-moneda de la app se calcula con una única **tasa viva global**
+(`UtilsService.currencyMappings`, derivada de la última tasa "blue" de bluelytics y cacheada en una
+tabla `currency_rates` de una sola fila). Las conversiones no tienen temporalidad: un movimiento
+creado hace dos años se muestra/agrega a la tasa de *hoy*, lo que tergiversa cuánto valía cuando
+ocurrió.
 
-**Goal:** value each movement at the exchange rate in effect **when it was created**, and use that
-rate wherever the movement is shown or aggregated in another currency. Backfilling old movements
-with the current rate is acceptable.
+**Objetivo:** valuar cada movimiento a la tasa de cambio vigente **al momento en que fue creado**, y
+usar esa tasa en todo lugar donde el movimiento se muestre o agregue en otra moneda. Es aceptable
+completar los movimientos viejos con la tasa actual.
 
-## Scope
+## Alcance
 
-Historical rates apply to **movement-level conversions only**:
+Las tasas históricas aplican **solo a conversiones a nivel de movimiento**:
 
-- Movements list (`movements_list.dart`)
-- Statistics aggregations — expenses by category and by day (`movements.repository.dart`)
+- Lista de movimientos (`movements_list.dart`)
+- Agregaciones de estadísticas — gastos por categoría y por día (`movements.repository.dart`)
 
-**Out of scope (keep the live rate):** total patrimony and the per-account totals pie
-(`total_viewer.dart`, `dashboard.dart`). These convert *current account balances*, which are
-"as of now" figures with no single creation date, so the live rate is the correct choice.
-`movement_details.dialog.dart` displays amounts in the movements' native account currencies (no FX
-conversion) and is unaffected.
+**Fuera de alcance (se mantiene la tasa viva):** el patrimonio total y el gráfico de tortas de
+totales por cuenta (`total_viewer.dart`, `dashboard.dart`). Estos convierten *saldos actuales de las
+cuentas*, que son cifras "al día de hoy" sin una fecha de creación única, así que la tasa viva es la
+elección correcta. `movement_details.dialog.dart` muestra los importes en la moneda nativa de las
+cuentas del movimiento (sin conversión FX) y no se ve afectado.
 
-## Approach: date-based lookup against a rate history (no per-movement FK)
+## Enfoque: búsqueda por fecha contra un historial de tasas (sin FK por movimiento)
 
-Rather than storing a rate snapshot (or a foreign key) on each movement, a movement's rate is
-**derived** from its `creationDate` against a historical rate table. This was chosen over a
-per-movement FK/snapshot because:
+En vez de guardar una foto de la tasa (o una foreign key) en cada movimiento, la tasa de un
+movimiento se **deriva** de su `creationDate` contra una tabla de historial de tasas. Se eligió esto
+por sobre una FK/foto por movimiento porque:
 
-- No change to the `movements` table or `Movement` model.
-- Nothing to set on `create`; editing a movement's date automatically re-values it correctly.
-- The rate table stays compact via dedup-on-change (see below).
+- No cambia la tabla `movements` ni el modelo `Movement`.
+- No hay nada que setear en `create`; editar la fecha de un movimiento lo re-valúa correctamente de
+  forma automática.
+- La tabla de tasas se mantiene compacta gracias al dedup-on-change (ver abajo).
 
-Trade-off accepted: conversions are derived, not frozen per movement — extending or correcting the
-history retroactively shifts past display values. This is fine for a single-user personal-finance
-app and is precisely what makes date edits "just work."
+Trade-off aceptado: las conversiones son derivadas, no congeladas por movimiento — extender o
+corregir el historial de forma retroactiva desplaza los valores mostrados del pasado. Esto es
+aceptable para una app de finanzas personales de un solo usuario y es justamente lo que hace que la
+edición de fechas "funcione sola".
 
-## Data model & schema
+## Modelo de datos y esquema
 
-`currency_rates` becomes an **append-on-change history table**:
+`currency_rates` pasa a ser una **tabla de historial que agrega filas al cambiar** (append-on-change):
 
-- Add a `createdAt` DATE column: when this distinct set of four rates first appeared.
-- Keep `updatedAt`: the last time the same four rates were observed still in effect (also drives the
-  dashboard "última actualización" text).
-- Row semantics: *these four rates held from `createdAt` until the next row's `createdAt`.*
+- Agregar una columna `createdAt` DATE: cuándo apareció por primera vez este conjunto distinto de
+  cuatro tasas.
+- Mantener `updatedAt`: la última vez que se observó que las mismas cuatro tasas seguían vigentes
+  (también alimenta el texto de "última actualización" del dashboard).
+- Semántica de la fila: *estas cuatro tasas rigieron desde `createdAt` hasta el `createdAt` de la
+  fila siguiente.*
 
-Add `createdAt` to:
+Agregar `createdAt` a:
 
-- `CurrencyRatesRepository.currencyRatesColumns` (fresh-DB definition).
-- The `CurrencyRates` model (`createdAt` field, constructor, `toString`).
+- `CurrencyRatesRepository.currencyRatesColumns` (definición de DB fresca).
+- El modelo `CurrencyRates` (campo `createdAt`, constructor, `toString`).
 
-**No change** to the `movements` table or the `Movement` model.
+**No cambia** la tabla `movements` ni el modelo `Movement`.
 
-## Recording rates (dedup-on-change)
+## Registro de tasas (dedup-on-change)
 
-Replace `CurrencyRatesRepository.saveLatest` (single-row upsert) with `record(CurrencyRates rates)`:
+Reemplazar `CurrencyRatesRepository.saveLatest` (upsert de una sola fila) por
+`record(CurrencyRates rates)`:
 
-1. Load the latest row (`findLatest`).
-2. If it exists **and all four values (`usdBuy`, `usdSell`, `eurBuy`, `eurSell`) are equal** → update
-   its `updatedAt = now`.
-3. Otherwise → **insert** a new row with `createdAt = now`, `updatedAt = now`.
+1. Cargar la última fila (`findLatest`).
+2. Si existe **y los cuatro valores (`usdBuy`, `usdSell`, `eurBuy`, `eurSell`) son iguales** →
+   actualizar su `updatedAt = now`.
+3. En caso contrario → **insertar** una fila nueva con `createdAt = now`, `updatedAt = now`.
 
-A new row is created only when a value actually changes, keeping the table small. `findLatest()` is
-unchanged, so `exchange_rates.dart` and `loadCachedMappings()` keep working as-is.
+Se crea una fila nueva solo cuando un valor efectivamente cambia, manteniendo la tabla chica.
+`findLatest()` no cambia, así que `exchange_rates.dart` y `loadCachedMappings()` siguen funcionando
+tal cual.
 
-## Conversion layer (`UtilsService`)
+## Capa de conversión (`UtilsService`)
 
-- Extract a pure builder from the current `applyRates` body:
+- Extraer un builder puro del cuerpo actual de `applyRates`:
   `List<CurrencyMapping> buildMappings({required double usdBuy, required double usdSell, required
-  double eurBuy, required double eurSell})`. `applyRates` becomes
+  double eurBuy, required double eurSell})`. `applyRates` pasa a ser
   `currencyMappings = buildMappings(...)`.
-- Keep `currencyMappings` + `convertCurrencies(amount, from, to)` as the **live** path (balances /
-  totals) — behavior unchanged, still fires the throttled `updateCurrencyMappings()`.
-- Add an in-memory `List<CurrencyRates> rateHistory`, sorted by `createdAt` ascending. Loaded in
-  `loadCachedMappings()` and refreshed after each `record(...)`.
-- Add **`convertCurrenciesAt(double amount, Currency from, Currency to, DateTime date)`**:
-  1. `from == to` → return `amount`.
-  2. Resolve the applicable row: the latest row with `createdAt <= date`; if none, the **earliest**
-     row; if `rateHistory` is empty, fall back to **default (1:1) mappings**.
-  3. Build mappings from the resolved row (`buildMappings`) and convert.
+- Mantener `currencyMappings` + `convertCurrencies(amount, from, to)` como el camino **vivo** (saldos
+  / totales) — comportamiento sin cambios, sigue disparando el `updateCurrencyMappings()` con
+  throttle.
+- Agregar una `List<CurrencyRates> rateHistory` en memoria, ordenada por `createdAt` ascendente. Se
+  carga en `loadCachedMappings()` y se refresca después de cada `record(...)`.
+- Agregar **`convertCurrenciesAt(double amount, Currency from, Currency to, DateTime date)`**:
+  1. `from == to` → devolver `amount`.
+  2. Resolver la fila aplicable: la última fila con `createdAt <= date`; si no hay ninguna, la fila
+     **más antigua**; si `rateHistory` está vacío, caer a los **mappings por defecto (1:1)**.
+  3. Construir los mappings desde la fila resuelta (`buildMappings`) y convertir.
 
-  `convertCurrenciesAt` does **not** trigger a network fetch (the live path already refreshes on init
-  and on balance conversions), avoiding a request stampede while iterating many movements in
-  statistics.
+  `convertCurrenciesAt` **no** dispara un fetch de red (el camino vivo ya refresca en el init y en las
+  conversiones de saldos), evitando una estampida de requests al iterar muchos movimientos en las
+  estadísticas.
 
-## Read/display call-site changes
+## Cambios en los call-sites de lectura/visualización
 
-Switch these movement-level conversions from `convertCurrencies(...)` to
+Pasar estas conversiones a nivel de movimiento de `convertCurrencies(...)` a
 `convertCurrenciesAt(..., movement.creationDate)`:
 
-- `movements_list.dart` — `MovementListItem.amount` getter.
-- `movements.repository.dart` — `getExpensesByCategory` and `getExpensesByDay`.
+- `movements_list.dart` — getter `MovementListItem.amount`.
+- `movements.repository.dart` — `getExpensesByCategory` y `getExpensesByDay`.
 
-### Statistics: eliminate the double conversion
+### Estadísticas: eliminar la doble conversión
 
-Today `getExpensesByCategory`/`getExpensesByDay` convert each movement to a base currency, and
-`expenses_by_category.dart`'s table toggle re-expresses the **aggregate** via the live rate. With
-historical rates that second leg would re-introduce temporality loss at the aggregate level.
+Hoy `getExpensesByCategory`/`getExpensesByDay` convierten cada movimiento a una moneda base, y el
+toggle de la tabla en `expenses_by_category.dart` re-expresa el **agregado** con la tasa viva. Con
+tasas históricas ese segundo paso volvería a introducir pérdida de temporalidad a nivel del agregado.
 
-Fix (fully-correct, chosen approach):
+Fix (enfoque totalmente correcto, elegido):
 
-- Give `getExpensesByCategory`/`getExpensesByDay` a `Currency displayCurrency` parameter and convert
-  **each movement directly into that currency at its own `creationDate`**, summing per category / per
-  day.
-- In `expenses_by_category.dart`, the currency-toggle re-runs the query with the newly selected
-  currency (a fast local re-query) instead of converting the loaded aggregate. `PERCENT` mode
-  computes ratios from the currently-loaded aggregation (ratios are consistent within a single
-  aggregation), so it needs no conversion.
-- `expenses_by_day.dart` has no currency toggle; the repo converting each movement historically into
-  the account currency (or USD when no account is selected) is the complete fix there.
+- Darles a `getExpensesByCategory`/`getExpensesByDay` un parámetro `Currency displayCurrency` y
+  convertir **cada movimiento directamente a esa moneda a su propio `creationDate`**, sumando por
+  categoría / por día.
+- En `expenses_by_category.dart`, el toggle de moneda re-ejecuta la query con la nueva moneda
+  seleccionada (una re-query local y rápida) en vez de convertir el agregado ya cargado. El modo
+  `PERCENT` calcula los ratios desde el agregado actualmente cargado (los ratios son consistentes
+  dentro de una misma agregación), así que no necesita conversión.
+- `expenses_by_day.dart` no tiene toggle de moneda; que el repo convierta cada movimiento
+  históricamente a la moneda de la cuenta (o USD cuando no hay cuenta seleccionada) es el fix
+  completo ahí.
 
-### Unchanged (live rate, by design)
+### Sin cambios (tasa viva, por diseño)
 
-- `total_viewer.dart` (single-account and total-patrimony sums).
-- `dashboard.dart` `buildTotalsChart` (per-account totals pie).
-- `movement_details.dialog.dart` (native-currency amounts, no FX).
+- `total_viewer.dart` (totales de una cuenta y del patrimonio total).
+- `dashboard.dart` `buildTotalsChart` (torta de totales por cuenta).
+- `movement_details.dialog.dart` (importes en moneda nativa, sin FX).
 
-## Migration
+## Migración
 
-New `lib/migrations/add_created_at_to_currency_rates.migration.dart`, appended to
-`migrationDefinitions` in `migrations_list.dart`:
+Nueva `lib/migrations/add_created_at_to_currency_rates.migration.dart`, agregada a
+`migrationDefinitions` en `migrations_list.dart`:
 
-- `ALTER TABLE currency_rates ADD createdAt ...` guarded by the established duplicate-column
-  idempotency pattern.
-- Backfill the existing single row's `createdAt` from its `updatedAt`.
-- Effect on existing data: existing movements predate that `createdAt`, so they resolve via the
-  "earliest row" rule to the current/last-known rate — the accepted "old values use current rate"
-  behavior. No historical rates are fetched from the network.
+- `ALTER TABLE currency_rates ADD createdAt ...` protegida por el patrón de idempotencia establecido
+  para columnas duplicadas.
+- Completar el `createdAt` de la fila existente a partir de su `updatedAt`.
+- Efecto sobre los datos existentes: los movimientos existentes son anteriores a ese `createdAt`, así
+  que resuelven por la regla de la "fila más antigua" a la tasa actual/última conocida — el
+  comportamiento aceptado de "los valores viejos usan la tasa actual". No se traen tasas históricas de
+  la red.
 
-## Edge cases
+## Casos borde
 
-- **Sparse history / offline gaps:** a movement created during a gap resolves to the last-known rate
-  before it — the best available; accepted.
-- **Empty history (fresh install, offline before first fetch):** `convertCurrenciesAt` falls back to
-  1:1 defaults, matching today's seed behavior. Self-corrects once the first fetch records a row.
-- **Derived, not frozen:** correcting/extending the history retroactively adjusts past display
-  values — intended (single-user app; enables correct date edits).
-- **Transfers:** the manually-entered `conversionRate` still governs the source→target crediting and
-  the received-amount display; `convertCurrenciesAt` only governs re-expressing a movement's amount
-  in a *different* display currency.
+- **Historial disperso / gaps offline:** un movimiento creado durante un gap resuelve a la última
+  tasa conocida antes de él — lo mejor disponible; aceptado.
+- **Historial vacío (instalación fresca, offline antes del primer fetch):** `convertCurrenciesAt` cae
+  a los defaults 1:1, coincidiendo con el comportamiento de seed actual. Se autocorrige en cuanto el
+  primer fetch registra una fila.
+- **Derivado, no congelado:** corregir/extender el historial ajusta retroactivamente los valores
+  mostrados del pasado — es intencional (app de un solo usuario; habilita la edición correcta de
+  fechas).
+- **Transferencias:** el `conversionRate` ingresado manualmente sigue gobernando el crédito
+  origen→destino y la visualización del importe recibido; `convertCurrenciesAt` solo gobierna
+  re-expresar el importe de un movimiento en una moneda de visualización *distinta*.
 
-## Docs to update (same change, per docs-maintenance rule)
+## Docs a actualizar (en el mismo cambio, por la regla de mantenimiento de docs)
 
-- `docs/features/currency.md` — history table, dedup-on-change, `convertCurrenciesAt`,
-  `rateHistory`, resolution rule.
-- `docs/features/statistics.md` — per-movement historical conversion and the re-query toggle.
-- `docs/features/movements.md` — note that display/aggregation conversions are date-based.
-- `docs/migrations.md` — the new migration entry (via the recipe).
+- `docs/features/currency.md` — tabla de historial, dedup-on-change, `convertCurrenciesAt`,
+  `rateHistory`, regla de resolución.
+- `docs/features/statistics.md` — conversión histórica por movimiento y el toggle con re-query.
+- `docs/features/movements.md` — aclarar que las conversiones de visualización/agregación son por
+  fecha.
+- `docs/migrations.md` — la entrada de la nueva migración (vía la receta).
