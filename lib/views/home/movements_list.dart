@@ -137,7 +137,7 @@ class MovementListItem extends StatelessWidget {
       currencyFrom = movement.source?.currency ?? movement.target?.currency ?? Currency.USD;
     }
     var utilsService = GetIt.instance.get<UtilsService>();
-    return utilsService.convertCurrencies(amountOnTarget, currencyFrom, currency);
+    return utilsService.convertCurrenciesAt(amountOnTarget, currencyFrom, currency, movement.creationDate ?? DateTime.now());
   }
 
   const MovementListItem({ super.key, required this.movement, required this.currency, this.account });
