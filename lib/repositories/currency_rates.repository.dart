@@ -55,11 +55,7 @@ class CurrencyRatesRepository extends BaseRepository<CurrencyRates> {
 
   Future<void> record(CurrencyRates rates) async {
     var latest = await findLatest();
-    if (latest != null &&
-        latest.usdBuy == rates.usdBuy &&
-        latest.usdSell == rates.usdSell &&
-        latest.eurBuy == rates.eurBuy &&
-        latest.eurSell == rates.eurSell) {
+    if (latest != null && latest.usdBuy == rates.usdBuy && latest.usdSell == rates.usdSell && latest.eurBuy == rates.eurBuy && latest.eurSell == rates.eurSell) {
       latest.updatedAt = rates.updatedAt;
       await update(latest);
     } else {
