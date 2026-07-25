@@ -62,4 +62,10 @@ Currencies are stored on `Account` as `TEXT` via `Currency.name` (see
   offline launch never blocks on the network.
 - **First-ever launch while offline** (no cached row): mappings stay at the `1` seed until the
   first online launch, so cross-currency amounts show 1:1 until then.
+- **First launch after the `rebuild_currency_rates_buy_sell` migration** (which drops the cached
+  row): `loadCachedMappings()` finds no row, so mappings start at the `1` seed. The dashboard
+  renders before the background fetch lands, and views computed once at first render (e.g. the
+  expenses-by-category chart, which doesn't listen for rate changes) show ARS amounts unconverted
+  for that session. Self-corrects on the next launch, once the fetched row is cached — accepted as
+  a one-time upgrade quirk.
 - If a mapping for a pair is missing, `convertCurrencies` returns the amount unchanged.
