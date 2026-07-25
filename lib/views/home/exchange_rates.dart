@@ -124,8 +124,8 @@ class _ExchangeRatesTableState extends State<ExchangeRatesTable> {
 
   TableRow buildRateRow(BuildContext context, Currency currency) {
     var pair = ratesFor(currency);
-    var compra = pair == null ? '—' : utilsService.beautifyCurrency(pair.$1, Currency.ARS);
-    var venta = pair == null ? '—' : utilsService.beautifyCurrency(pair.$2, Currency.ARS);
+    var buy = pair == null ? '—' : utilsService.beautifyCurrency(pair.$1, Currency.ARS);
+    var sell = pair == null ? '—' : utilsService.beautifyCurrency(pair.$2, Currency.ARS);
     return TableRow(
       children: [
         Padding(
@@ -140,11 +140,11 @@ class _ExchangeRatesTableState extends State<ExchangeRatesTable> {
         ),
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-          child: Text(compra, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold), textAlign: TextAlign.end),
+          child: Text(buy, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold), textAlign: TextAlign.end),
         ),
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-          child: Text(venta, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold), textAlign: TextAlign.end),
+          child: Text(sell, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold), textAlign: TextAlign.end),
         ),
       ],
     );
