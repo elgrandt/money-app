@@ -68,6 +68,18 @@ class _ExchangeRatesTableState extends State<ExchangeRatesTable> {
     return DateFormat('dd/MM/yyyy HH:mm').format(latestRates!.updatedAt);
   }
 
+  (double, double)? ratesFor(Currency currency) {
+    if (latestRates == null) return null;
+    switch (currency) {
+      case Currency.USD:
+        return (latestRates!.usdBuy, latestRates!.usdSell);
+      case Currency.EUR:
+        return (latestRates!.eurBuy, latestRates!.eurSell);
+      case Currency.ARS:
+        return null;
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Padding(
@@ -78,9 +90,13 @@ class _ExchangeRatesTableState extends State<ExchangeRatesTable> {
             columnWidths: const {
               0: FlexColumnWidth(1),
               1: IntrinsicColumnWidth(),
+              2: IntrinsicColumnWidth(),
             },
             defaultVerticalAlignment: TableCellVerticalAlignment.middle,
-            children: currencies.map((currency) => buildRateRow(context, currency)).toList(),
+            children: [
+              buildHeaderRow(context),
+              ...currencies.map((currency) => buildRateRow(context, currency)),
+            ],
           ),
           const SizedBox(height: 15),
           Text('Última actualización: ${ lastUpdateText() }', style: TextStyle(fontSize: 14, color: Colors.grey.shade600)),
@@ -89,8 +105,27 @@ class _ExchangeRatesTableState extends State<ExchangeRatesTable> {
     );
   }
 
+  TableRow buildHeaderRow(BuildContext context) {
+    var headerStyle = TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Colors.grey.shade600);
+    return TableRow(
+      children: [
+        const SizedBox.shrink(),
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+          child: Text('Compra', style: headerStyle, textAlign: TextAlign.end),
+        ),
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+          child: Text('Venta', style: headerStyle, textAlign: TextAlign.end),
+        ),
+      ],
+    );
+  }
+
   TableRow buildRateRow(BuildContext context, Currency currency) {
-    var rate = utilsService.convertCurrencies(1, currency, Currency.ARS);
+    var pair = ratesFor(currency);
+    var buy = pair == null ? '—' : utilsService.beautifyCurrency(pair.$1, Currency.ARS);
+    var sell = pair == null ? '—' : utilsService.beautifyCurrency(pair.$2, Currency.ARS);
     return TableRow(
       children: [
         Padding(
@@ -105,7 +140,11 @@ class _ExchangeRatesTableState extends State<ExchangeRatesTable> {
         ),
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-          child: Text(utilsService.beautifyCurrency(rate, Currency.ARS), style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold), textAlign: TextAlign.end),
+          child: Text(buy, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold), textAlign: TextAlign.end),
+        ),
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+          child: Text(sell, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold), textAlign: TextAlign.end),
         ),
       ],
     );

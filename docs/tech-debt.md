@@ -33,9 +33,6 @@ most inline `GetIt`, deprecated APIs, and several bugs). What remains is below.
 
 ## Behavior / config debt (documented only)
 
-- Hardcoded `eurToUsd = 1.11` in
-  [utils.service.dart](../lib/services/utils.service.dart) `updateCurrencyMappings` — no
-  EUR→USD API was found at the time; revisit later.
 - Unused codegen dependencies in `pubspec.yaml`: `json_serializable`, `json_annotation`,
   `build_runner` — nothing uses them; models are hand-written.
 

@@ -52,14 +52,14 @@ class UtilsService {
 
   DatabaseService get _databaseService => GetIt.instance.get<DatabaseService>();
 
-  void applyRates({ required double usdToArs, required double eurToArs, required double eurToUsd }) {
+  void applyRates({ required double usdBuy, required double usdSell, required double eurBuy, required double eurSell }) {
     currencyMappings = [
-      CurrencyMapping(from: Currency.ARS, to: Currency.EUR, multiplier: 1 / eurToArs),
-      CurrencyMapping(from: Currency.ARS, to: Currency.USD, multiplier: 1 / usdToArs),
-      CurrencyMapping(from: Currency.USD, to: Currency.ARS, multiplier: usdToArs),
-      CurrencyMapping(from: Currency.USD, to: Currency.EUR, multiplier: 1 / eurToUsd),
-      CurrencyMapping(from: Currency.EUR, to: Currency.ARS, multiplier: eurToArs),
-      CurrencyMapping(from: Currency.EUR, to: Currency.USD, multiplier: eurToUsd),
+      CurrencyMapping(from: Currency.ARS, to: Currency.EUR, multiplier: 1 / eurSell),
+      CurrencyMapping(from: Currency.ARS, to: Currency.USD, multiplier: 1 / usdSell),
+      CurrencyMapping(from: Currency.USD, to: Currency.ARS, multiplier: usdBuy),
+      CurrencyMapping(from: Currency.USD, to: Currency.EUR, multiplier: usdBuy / eurSell),
+      CurrencyMapping(from: Currency.EUR, to: Currency.ARS, multiplier: eurBuy),
+      CurrencyMapping(from: Currency.EUR, to: Currency.USD, multiplier: eurBuy / usdSell),
     ];
   }
 
@@ -68,7 +68,7 @@ class UtilsService {
       await _databaseService.initialized;
       var cached = await _databaseService.currencyRatesRepository.findLatest();
       if (cached != null) {
-        applyRates(usdToArs: cached.usdToArs, eurToArs: cached.eurToArs, eurToUsd: cached.eurToUsd);
+        applyRates(usdBuy: cached.usdBuy, usdSell: cached.usdSell, eurBuy: cached.eurBuy, eurSell: cached.eurSell);
         logger.d('Loaded cached currency mappings: $cached');
       }
     } catch (error, stackTrace) {
@@ -86,14 +86,16 @@ class UtilsService {
       var response = await http.get(url);
       var json = response.body;
       var body = jsonDecode(json);
-      double usdToArs = body['blue']['value_buy'];
-      double eurToArs = body['blue_euro']['value_buy'];
-      double eurToUsd = 1.11;
-      applyRates(usdToArs: usdToArs, eurToArs: eurToArs, eurToUsd: eurToUsd);
+      double usdBuy = body['blue']['value_buy'];
+      double usdSell = body['blue']['value_sell'];
+      double eurBuy = body['blue_euro']['value_buy'];
+      double eurSell = body['blue_euro']['value_sell'];
+      applyRates(usdBuy: usdBuy, usdSell: usdSell, eurBuy: eurBuy, eurSell: eurSell);
       await _databaseService.currencyRatesRepository.saveLatest(CurrencyRates(
-        usdToArs: usdToArs,
-        eurToArs: eurToArs,
-        eurToUsd: eurToUsd,
+        usdBuy: usdBuy,
+        usdSell: usdSell,
+        eurBuy: eurBuy,
+        eurSell: eurSell,
         updatedAt: DateTime.now(),
       ));
       logger.d('Currency mappings updated successfully');

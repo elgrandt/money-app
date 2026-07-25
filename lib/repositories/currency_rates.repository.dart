@@ -5,9 +5,10 @@ import 'package:sqflite/sqflite.dart';
 class CurrencyRatesRepository extends BaseRepository<CurrencyRates> {
   static List<DatabaseColumnDefinition> currencyRatesColumns = [
     DatabaseColumnDefinition('id', DatabaseColumnType.INTEGER, primaryKey: PrimaryKeyDefinition(autoincrement: true)),
-    DatabaseColumnDefinition('usdToArs', DatabaseColumnType.REAL),
-    DatabaseColumnDefinition('eurToArs', DatabaseColumnType.REAL),
-    DatabaseColumnDefinition('eurToUsd', DatabaseColumnType.REAL),
+    DatabaseColumnDefinition('usdBuy', DatabaseColumnType.REAL),
+    DatabaseColumnDefinition('usdSell', DatabaseColumnType.REAL),
+    DatabaseColumnDefinition('eurBuy', DatabaseColumnType.REAL),
+    DatabaseColumnDefinition('eurSell', DatabaseColumnType.REAL),
     DatabaseColumnDefinition('updatedAt', DatabaseColumnType.DATE),
   ];
 
@@ -19,9 +20,10 @@ class CurrencyRatesRepository extends BaseRepository<CurrencyRates> {
     if (model.id != null) {
       map['id'] = model.id;
     }
-    map['usdToArs'] = model.usdToArs;
-    map['eurToArs'] = model.eurToArs;
-    map['eurToUsd'] = model.eurToUsd;
+    map['usdBuy'] = model.usdBuy;
+    map['usdSell'] = model.usdSell;
+    map['eurBuy'] = model.eurBuy;
+    map['eurSell'] = model.eurSell;
     map['updatedAt'] = model.updatedAt.toIso8601String();
     return map;
   }
@@ -29,9 +31,10 @@ class CurrencyRatesRepository extends BaseRepository<CurrencyRates> {
   @override
   CurrencyRates mapToModel(Map<String, Object?> map) {
     return CurrencyRates(
-      usdToArs: map['usdToArs'] as double,
-      eurToArs: map['eurToArs'] as double,
-      eurToUsd: map['eurToUsd'] as double,
+      usdBuy: map['usdBuy'] as double,
+      usdSell: map['usdSell'] as double,
+      eurBuy: map['eurBuy'] as double,
+      eurSell: map['eurSell'] as double,
       updatedAt: DateTime.parse(map['updatedAt'] as String),
       id: map['id'] as int?,
     );
