@@ -28,12 +28,18 @@ class _DateRangeSelectorDialogState extends State<DateRangeSelectorDialog> {
   void initState() {
     super.initState();
     var now = DateTime.now();
-    fromDate = widget.initialRange?.start ?? DateTime(now.year, now.month);
-    toDate = widget.initialRange?.end ?? now;
+    fromDate = startOfDay(widget.initialRange?.start ?? DateTime(now.year, now.month));
+    toDate = startOfDay(widget.initialRange?.end ?? now);
   }
 
   DateTime startOfDay(DateTime date) => DateTime(date.year, date.month, date.day);
   DateTime endOfDay(DateTime date) => DateTime(date.year, date.month, date.day, 23, 59, 59);
+
+  DateTime clampToBounds(DateTime date) {
+    if (widget.firstDate != null && date.isBefore(widget.firstDate!)) return widget.firstDate!;
+    if (widget.lastDate != null && date.isAfter(widget.lastDate!)) return widget.lastDate!;
+    return date;
+  }
 
   bool get canSubmit {
     return !startOfDay(toDate).isBefore(startOfDay(fromDate));
@@ -55,7 +61,7 @@ class _DateRangeSelectorDialogState extends State<DateRangeSelectorDialog> {
           top: false,
           child: CupertinoDatePicker(
             mode: CupertinoDatePickerMode.date,
-            initialDateTime: initial,
+            initialDateTime: clampToBounds(initial),
             minimumDate: widget.firstDate,
             maximumDate: widget.lastDate,
             onDateTimeChanged: onChanged,
