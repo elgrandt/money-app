@@ -80,6 +80,12 @@ or `Theme.of(context).colorScheme.error`.
 - **Pie charts** → the generic `EasyPieChart<T>`
   ([easy_pie_chart.dart](../lib/views/generics/easy_pie_chart.dart)); **tabs** → the generic
   `Tabs` ([tabs.dart](../lib/views/generics/tabs.dart)).
+- **Selección de rango de fechas** → el diálogo genérico `DateRangeSelectorDialog`
+  ([date_range_selector.dialog.dart](../lib/views/generics/date_range_selector.dialog.dart)): se
+  abre con `showDialog<DateTimeRange>` y devuelve un `DateTimeRange?` (`null` al cancelar).
+  Recibe `initialRange`, `firstDate`, `lastDate` y `title`; internamente "Desde" queda a las
+  00:00:00 y "Hasta" a las 23:59:59. Usa el mismo `CupertinoDatePicker` en bottom sheet de 216px
+  que el input de fecha de un movimiento.
 
 ## Money and confirmations
 
