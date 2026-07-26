@@ -56,7 +56,7 @@ class _ExpensesByCategoryChartState extends State<ExpensesByCategoryChart> {
     } else if (selectedPeriod == 'this-month') {
       startDate = DateTime(DateTime.now().year, DateTime.now().month);
     }
-    var result = await databaseService.movementsRepository.getExpensesByCategory(widget.account, selectedMovementType, startDate, displayCurrency);
+    var result = await databaseService.movementsRepository.getExpensesByCategory(widget.account, selectedMovementType, startDate, null, displayCurrency);
     if (!mounted) return;
     result.sort((a, b) => (b['total'] as double).compareTo(a['total'] as double));
     setState(() {

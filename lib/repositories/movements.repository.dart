@@ -174,7 +174,7 @@ class MovementsRepository extends BaseRepository<Movement> {
     await delete(movement.id!);
   }
 
-  Future<List<Map<String, Object?>>> getExpensesByCategory(Account? account, MovementType? movementType, DateTime? startDate, Currency displayCurrency) async {
+  Future<List<Map<String, Object?>>> getExpensesByCategory(Account? account, MovementType? movementType, DateTime? startDate, DateTime? endDate, Currency displayCurrency) async {
     var where = 'type = ?';
     List<Object?> whereArgs = [movementType!.name];
     if (account != null) {
@@ -185,6 +185,10 @@ class MovementsRepository extends BaseRepository<Movement> {
     if (startDate != null) {
       where += ' AND creationDate >= ?';
       whereArgs.add(startDate.toString());
+    }
+    if (endDate != null) {
+      where += ' AND creationDate <= ?';
+      whereArgs.add(endDate.toString());
     }
     var movements = await find(where: where, args: whereArgs);
     return movements.fold<Map<String, double>>({}, (map, movement) {
