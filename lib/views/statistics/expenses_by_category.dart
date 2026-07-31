@@ -6,6 +6,7 @@ import 'package:money/models/movement.model.dart';
 import 'package:money/services/database.service.dart';
 import 'package:money/services/utils.service.dart';
 import 'package:money/views/generics/button_selector.dart';
+import 'package:money/views/generics/date_range_selector.dialog.dart';
 import 'package:money/views/generics/easy_pie_chart.dart';
 import 'package:money/views/generics/loader.dart';
 
@@ -21,7 +22,8 @@ class ExpensesByCategoryChart extends StatefulWidget {
 class _ExpensesByCategoryChartState extends State<ExpensesByCategoryChart> {
   List<Map<String, Object?>>? expensesByCategory;
   MovementType selectedMovementType = MovementType.REMOVE;
-  String? selectedPeriod = 'this-month';
+  String selectedPeriod = 'this-month';
+  DateTimeRange? customRange;
   var databaseService = GetIt.instance.get<DatabaseService>();
   var utilsService = GetIt.instance.get<UtilsService>();
   final colorSeed = 134;
@@ -49,14 +51,20 @@ class _ExpensesByCategoryChartState extends State<ExpensesByCategoryChart> {
 
   void getExpensesByCategory() async {
     DateTime? startDate;
-    if (selectedPeriod == 'month') {
-      startDate = DateTime.now().subtract(const Duration(days: 30));
-    } else if (selectedPeriod == 'year') {
-      startDate = DateTime.now().subtract(const Duration(days: 365));
-    } else if (selectedPeriod == 'this-month') {
-      startDate = DateTime(DateTime.now().year, DateTime.now().month);
+    DateTime? endDate;
+    var now = DateTime.now();
+    if (selectedPeriod == 'this-month') {
+      startDate = DateTime(now.year, now.month);
+    } else if (selectedPeriod == 'last-month') {
+      startDate = DateTime(now.year, now.month - 1);
+      endDate = DateTime(now.year, now.month).subtract(const Duration(seconds: 1));
+    } else if (selectedPeriod == 'month') {
+      startDate = now.subtract(const Duration(days: 30));
+    } else if (selectedPeriod == 'custom') {
+      startDate = customRange?.start;
+      endDate = customRange?.end;
     }
-    var result = await databaseService.movementsRepository.getExpensesByCategory(widget.account, selectedMovementType, startDate, displayCurrency);
+    var result = await databaseService.movementsRepository.getExpensesByCategory(widget.account, selectedMovementType, startDate, endDate, displayCurrency);
     if (!mounted) return;
     result.sort((a, b) => (b['total'] as double).compareTo(a['total'] as double));
     setState(() {
@@ -93,18 +101,39 @@ class _ExpensesByCategoryChartState extends State<ExpensesByCategoryChart> {
   }
 
   Widget buildPeriodSelect(BuildContext context) {
-    var options = ['this-month', 'month', 'year', null];
-    var optionNames = ['Éste mes', '1 mes', '1 año', 'Todos'];
+    var options = ['this-month', 'last-month', 'month', 'custom'];
+    var optionNames = ['Este mes', 'Mes pasado', '1 mes', 'Custom'];
     return ButtonSelector(
       options: optionNames.map((e) => Text(e)).toList(),
       selectedIndex: options.indexOf(selectedPeriod),
       onSelectionChange: (index) {
-        setState(() {
-          selectedPeriod = options[index];
-          getExpensesByCategory();
-        });
+        var option = options[index];
+        if (option == 'custom') {
+          selectCustomRange();
+        } else {
+          setState(() {
+            selectedPeriod = option;
+            getExpensesByCategory();
+          });
+        }
       },
     );
+  }
+
+  void selectCustomRange() async {
+    var range = await showDialog<DateTimeRange>(
+      context: context,
+      builder: (context) => DateRangeSelectorDialog(
+        initialRange: customRange,
+        lastDate: DateTime.now(),
+      ),
+    );
+    if (range == null || !mounted) return;
+    setState(() {
+      selectedPeriod = 'custom';
+      customRange = range;
+      getExpensesByCategory();
+    });
   }
 
   Widget buildEmptyMessage(BuildContext context) {

@@ -15,12 +15,14 @@ per-account totals pie.
 
 `MovementsRepository` — [movements.repository.dart:179-239](../../lib/repositories/movements.repository.dart#L179-L239):
 
-- `getExpensesByCategory(account, movementType, startDate, displayCurrency)` — sums amounts per
-  category, converting each movement into `displayCurrency` before aggregating.
+- `getExpensesByCategory(account, movementType, startDate, endDate, displayCurrency)` — sums
+  amounts per category, converting each movement into `displayCurrency` before aggregating.
 - `getExpensesByDay(account, movementType, startDate, displayCurrency)` — sums amounts per
   calendar day, converting each movement into `displayCurrency` before aggregating.
 
-Both filter by type, optionally by account, and optionally from a start date.
+`getExpensesByDay` filtra por tipo, opcionalmente por cuenta y opcionalmente desde una fecha de
+inicio; `getExpensesByCategory` además acepta una fecha de fin (`endDate`) para acotar el rango
+por arriba.
 
 ## Views involved
 
@@ -53,8 +55,9 @@ Both filter by type, optionally by account, and optionally from a start date.
 - **Category chart movement types** — the category chart offers only income (`ADD`) and
   expense (`REMOVE`); transfers are excluded because a per-category transfer total is not
   meaningful. The day chart still offers all three types.
-- **Period options** — category chart: `this-month` / `month` / `year` / all; day chart:
-  `week` / `month` / `year` / all.
+- **Period options** — category chart: `this-month` / `last-month` / `month` / `custom` (el
+  botón `custom` abre `DateRangeSelectorDialog` y guarda el rango elegido en `customRange`); day
+  chart: `week` / `month` / `year` / all.
 - **Accumulated mode** — recomputes the bar groups as a running sum and adjusts the Y range
   ([expenses_by_day.dart:69-126](../../lib/views/statistics/expenses_by_day.dart#L69-L126)).
 - Charts render nothing (or an empty message) when there is no data for the selection.
