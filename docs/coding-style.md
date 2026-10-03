@@ -39,6 +39,21 @@ by role, DI, storage) see [conventions.md](conventions.md); for visual widgets s
   }
   ```
 
+## Types and values
+
+- **No inline compound types** — never use record types like `({ DateTime? start, DateTime? end })`
+  or tuples as a return/field type. Split into one getter/method per value (e.g.
+  `selectedPeriodStartDate` and `selectedPeriodEndDate`), or create a named class if the values
+  truly travel together.
+- **Don't cache a getter in a local variable to avoid recomputing it.** Call the getter where
+  it's needed; the micro-optimization is not worth the extra variable and indirection.
+- **Names describe what the value is** — avoid vague names like `range` or `periodRange`; say
+  which period/range and whether it's a start or an end.
+- **Computed values get their own member:** a non-trivial calculation (e.g. a dialog height
+  from `MediaQuery`) goes in a dedicated method/getter (`getDialogHeight(context)`), and a
+  composed string (e.g. an interpolated dialog title) goes in a named getter (`get title`),
+  not inline in `build`/`buildX`.
+
 ## Comments
 
 Keep comments minimal; the code should be self-documenting. The only sanctioned comments are

@@ -51,7 +51,15 @@ a movement is implemented as remove-then-create.
 - [movement_details.dialog.dart](../../lib/views/movements/movement_details.dialog.dart) — a
   human-readable sentence describing the movement, plus edit and delete actions.
 - [movements_list.dart](../../lib/views/home/movements_list.dart) — the searchable list
-  (`MovementsList`) and each row (`MovementListItem`), with type-colored amounts.
+  (`MovementsList`) and each row (`MovementListItem`), with type-colored amounts. Acepta
+  filtros opcionales del lado del cliente: `movementTypeFilter`, `categoryFilter` y
+  `dateFromFilter` / `dateToFilter` (rango inclusivo sobre `creationDate`); cada uno se evalúa en
+  un método `matchesXFilter` y se combinan en `matchesFilters`.
+- [category_movements.dialog.dart](../../lib/views/movements/category_movements.dialog.dart) —
+  diálogo "Movimientos de <categoría> entre <desde> hasta <hasta>": un `MovementsList` filtrado
+  por categoría, tipo, cuenta y rango de fechas, con un `CurrencySelector` propio para elegir la
+  moneda de los montos. Se abre al tocar el nombre de una categoría en el gráfico de gastos por
+  categoría.
 
 ## Edge cases
 

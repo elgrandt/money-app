@@ -17,8 +17,11 @@ class MovementsList extends StatefulWidget {
   final Account? account;
   final Currency currency;
   final MovementType? movementTypeFilter;
+  final String? categoryFilter;
+  final DateTime? dateFromFilter;
+  final DateTime? dateToFilter;
 
-  const MovementsList({ super.key, required this.currency, this.account, this.movementTypeFilter });
+  const MovementsList({ super.key, required this.currency, this.account, this.movementTypeFilter, this.categoryFilter, this.dateFromFilter, this.dateToFilter });
 
   @override
   State<MovementsList> createState() => MovementsListState();
@@ -37,8 +40,7 @@ class MovementsListState extends State<MovementsList> {
     var filtered = utilsService.filterList(movements!, search, (Movement movement) {
       return '${ movement.category }*****${ movement.description }';
     });
-    filtered = filtered.where((movement) => widget.movementTypeFilter == null || movement.type == widget.movementTypeFilter).toList();
-    return filtered;
+    return filtered.where(matchesFilters).toList();
   }
 
   @override
@@ -60,6 +62,27 @@ class MovementsListState extends State<MovementsList> {
     if (movements == null || widget.account?.id != oldWidget.account?.id) {
       getMovements();
     }
+  }
+
+  bool matchesFilters(Movement movement) {
+    return matchesTypeFilter(movement) && matchesCategoryFilter(movement) && matchesDateRangeFilter(movement);
+  }
+
+  bool matchesTypeFilter(Movement movement) {
+    return widget.movementTypeFilter == null || movement.type == widget.movementTypeFilter;
+  }
+
+  bool matchesCategoryFilter(Movement movement) {
+    return widget.categoryFilter == null || movement.category == widget.categoryFilter;
+  }
+
+  bool matchesDateRangeFilter(Movement movement) {
+    if (widget.dateFromFilter == null && widget.dateToFilter == null) return true;
+    var creationDate = movement.creationDate;
+    if (creationDate == null) return false;
+    if (widget.dateFromFilter != null && creationDate.isBefore(widget.dateFromFilter!)) return false;
+    if (widget.dateToFilter != null && creationDate.isAfter(widget.dateToFilter!)) return false;
+    return true;
   }
 
   Future<void> watchMovementChanges() async {
