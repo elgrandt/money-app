@@ -9,6 +9,7 @@ import 'package:money/views/generics/button_selector.dart';
 import 'package:money/views/generics/date_range_selector.dialog.dart';
 import 'package:money/views/generics/easy_pie_chart.dart';
 import 'package:money/views/generics/loader.dart';
+import 'package:money/views/movements/category_movements.dialog.dart';
 
 class ExpensesByCategoryChart extends StatefulWidget {
   final Account? account;
@@ -34,6 +35,22 @@ class _ExpensesByCategoryChartState extends State<ExpensesByCategoryChart> {
     return Currency.values.firstWhere((c) => c.toString() == viewMode, orElse: () => widget.account?.currency ?? Currency.USD);
   }
 
+  DateTime? get selectedPeriodStartDate {
+    var now = DateTime.now();
+    if (selectedPeriod == 'this-month') return DateTime(now.year, now.month);
+    if (selectedPeriod == 'last-month') return DateTime(now.year, now.month - 1);
+    if (selectedPeriod == 'month') return now.subtract(const Duration(days: 30));
+    if (selectedPeriod == 'custom') return customRange?.start;
+    return null;
+  }
+
+  DateTime? get selectedPeriodEndDate {
+    var now = DateTime.now();
+    if (selectedPeriod == 'last-month') return DateTime(now.year, now.month).subtract(const Duration(seconds: 1));
+    if (selectedPeriod == 'custom') return customRange?.end;
+    return null;
+  }
+
   @override
   void initState() {
     super.initState();
@@ -50,21 +67,7 @@ class _ExpensesByCategoryChartState extends State<ExpensesByCategoryChart> {
   }
 
   void getExpensesByCategory() async {
-    DateTime? startDate;
-    DateTime? endDate;
-    var now = DateTime.now();
-    if (selectedPeriod == 'this-month') {
-      startDate = DateTime(now.year, now.month);
-    } else if (selectedPeriod == 'last-month') {
-      startDate = DateTime(now.year, now.month - 1);
-      endDate = DateTime(now.year, now.month).subtract(const Duration(seconds: 1));
-    } else if (selectedPeriod == 'month') {
-      startDate = now.subtract(const Duration(days: 30));
-    } else if (selectedPeriod == 'custom') {
-      startDate = customRange?.start;
-      endDate = customRange?.end;
-    }
-    var result = await databaseService.movementsRepository.getExpensesByCategory(widget.account, selectedMovementType, startDate, endDate, displayCurrency);
+    var result = await databaseService.movementsRepository.getExpensesByCategory(widget.account, selectedMovementType, selectedPeriodStartDate, selectedPeriodEndDate, displayCurrency);
     if (!mounted) return;
     result.sort((a, b) => (b['total'] as double).compareTo(a['total'] as double));
     setState(() {
@@ -120,6 +123,17 @@ class _ExpensesByCategoryChartState extends State<ExpensesByCategoryChart> {
     );
   }
 
+  void openCategoryMovementsDialog(String category) {
+    showDialog(context: context, builder: (context) => CategoryMovementsDialog(
+      category: category,
+      dateFrom: selectedPeriodStartDate ?? DateTime.fromMillisecondsSinceEpoch(0),
+      dateTo: selectedPeriodEndDate ?? DateTime.now(),
+      movementType: selectedMovementType,
+      account: widget.account,
+      initialCurrency: displayCurrency,
+    ));
+  }
+
   void selectCustomRange() async {
     var range = await showDialog<DateTimeRange>(
       context: context,
@@ -163,7 +177,7 @@ class _ExpensesByCategoryChartState extends State<ExpensesByCategoryChart> {
       rows.add(buildTableRow(context, map['category'] as String, map['total'] as double, colors[i]));
     }
     double total = expensesByCategory!.map((map) => map['total'] as double).reduce((value, element) => value + element);
-    rows.add(buildTableRow(context, 'Total', total, Colors.transparent, showPercent: false));
+    rows.add(buildTableRow(context, 'Total', total, Colors.transparent, isTotal: true));
     return Table(
       columnWidths: const {
         0: FixedColumnWidth(50),
@@ -175,42 +189,60 @@ class _ExpensesByCategoryChartState extends State<ExpensesByCategoryChart> {
     );
   }
 
-  TableRow buildTableRow(BuildContext context, String name, double total, Color color, {bool showPercent = true}) {
+  TableRow buildTableRow(BuildContext context, String name, double total, Color color, {bool isTotal = false}) {
+    return TableRow(
+      children: [
+        buildIcon(context, color),
+        buildName(context, name, isTotal: isTotal),
+        buildAmount(context, total, showPercent: !isTotal),
+      ],
+    );
+  }
+
+  Widget buildIcon(BuildContext context, Color color) {
+    return Center(
+      child: Container(
+        width: 20,
+        height: 20,
+        decoration: BoxDecoration(
+          color: color,
+          borderRadius: BorderRadius.circular(100),
+        ),
+      ),
+    );
+  }
+
+  Widget buildName(BuildContext context, String name, {required bool isTotal}) {
+    if (isTotal) return Text(name, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold));
+    return GestureDetector(
+      onTap: () => openCategoryMovementsDialog(name),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 4),
+        child: Text(name, style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+      ),
+    );
+  }
+
+  Widget buildAmount(BuildContext context, double total, {required bool showPercent}) {
     String text = '';
     if (viewMode == 'PERCENT' && showPercent) {
       var percent = total / expensesByCategory!.map((map) => map['total'] as double).reduce((value, element) => value + element) * 100;
       text = '${ percent.toStringAsFixed(2) }%';
     } else {
-      var currency = Currency.values.firstWhere((currency) => currency.toString() == viewMode, orElse: () => widget.account?.currency ?? Currency.USD);
-      text = utilsService.beautifyCurrency(total, currency);
+      text = utilsService.beautifyCurrency(total, displayCurrency);
     }
-    return TableRow(
-      children: [
-        Center(
-          child: Container(
-            width: 20,
-            height: 20,
-            decoration: BoxDecoration(
-              color: color,
-              borderRadius: BorderRadius.circular(100),
-            ),
-          ),
-        ),
-        Text(name, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-        GestureDetector(
-          onTap: () {
-            setState(() {
-              var currentIndex = viewModes.indexOf(viewMode);
-              viewMode = viewModes[(currentIndex + 1) % viewModes.length];
-            });
-            getExpensesByCategory();
-          },
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-            child: Text(text, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold), textAlign: TextAlign.end),
-          ),
-        ),
-      ],
+    return GestureDetector(
+      onTap: () {
+        setState(() {
+          var currentIndex = viewModes.indexOf(viewMode);
+          viewMode = viewModes[(currentIndex + 1) % viewModes.length];
+        });
+        getExpensesByCategory();
+      },
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+        child: Text(text, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold), textAlign: TextAlign.end),
+      ),
     );
   }
 }

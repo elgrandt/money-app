@@ -29,7 +29,10 @@ por arriba.
 - [statistics.dart](../../lib/views/statistics/statistics.dart) — the `/statistics` screen;
   account selector + chart-type selector, then renders the chosen chart.
 - [expenses_by_category.dart](../../lib/views/statistics/expenses_by_category.dart) — pie +
-  table; type and period selectors; the table supports a currency/percent view-mode toggle.
+  table; type and period selectors; the table supports a currency/percent view-mode toggle. El
+  nombre de cada categoría es tocable y abre `CategoryMovementsDialog`
+  ([movements.md](movements.md)) con el rango del período (`selectedPeriodStartDate` / `selectedPeriodEndDate`; sin fin usa
+  `DateTime.now()`, sin inicio usa la época), el tipo y la cuenta seleccionados.
 - [expenses_by_day.dart](../../lib/views/statistics/expenses_by_day.dart) — `fl_chart` bar
   chart; type and period selectors and an accumulated switch; builds bar groups and axis
   titles in `doCalculations`.

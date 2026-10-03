@@ -28,6 +28,11 @@ Dialogs follow: `Dialog → Form` (when there are inputs) `→ SingleChildScroll
 buildActionButtons]` — see
 [new_account.dialog.dart](../lib/views/accounts/new_account.dialog.dart).
 
+Excepción: un diálogo que contiene una lista scrolleable (ej.
+[category_movements.dialog.dart](../lib/views/movements/category_movements.dialog.dart)) usa
+`Dialog → Padding → SizedBox(height: 75% de la pantalla) → Column [título, selectores, lista
+Expanded, botón Cerrar]`, sin `SingleChildScrollView`.
+
 ## Title style
 
 Dialog titles are centered, `fontSize: 20`, `Theme.of(context).primaryColor`, bold:
