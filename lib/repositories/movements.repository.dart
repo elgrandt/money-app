@@ -249,12 +249,12 @@ class MovementsRepository extends BaseRepository<Movement> {
     }).entries.map((entry) => {'date': entry.key, 'total': entry.value}).toList();
   }
 
-  Future<List<CategoryMonthlyExpenses>> getExpensesByCategoryByMonth(Account? account, DateTime startDate, DateTime endDate, Currency displayCurrency) async {
+  Future<List<CategoryMonthlyExpenses>> getExpensesByCategoryByMonth(Account? account, DateTime startMonth, DateTime endMonth, Currency displayCurrency) async {
     var where = 'type = ? AND creationDate >= ? AND creationDate < ?';
     List<Object?> whereArgs = [
       MovementType.REMOVE.name,
-      DateTime(startDate.year, startDate.month, startDate.day).toIso8601String(),
-      DateTime(endDate.year, endDate.month, endDate.day + 1).toIso8601String(),
+      DateTime(startMonth.year, startMonth.month).toIso8601String(),
+      DateTime(endMonth.year, endMonth.month + 1).toIso8601String(),
     ];
     if (account != null) {
       where += ' AND (sourceId = ? OR targetId = ?)';
@@ -262,14 +262,14 @@ class MovementsRepository extends BaseRepository<Movement> {
       whereArgs.add(account.id);
     }
     var movements = await find(where: where, args: whereArgs);
-    var dayCount = utilsService.dayIndex(startDate, endDate) + 1;
-    Map<String, List<double>> dailyTotalsByCategory = {};
+    var monthCount = utilsService.monthIndex(startMonth, endMonth) + 1;
+    Map<String, List<double>> monthlyTotalsByCategory = {};
     for (var movement in movements) {
       var creationDate = movement.creationDate!;
       var amount = utilsService.convertCurrenciesAt(movement.amount, movement.source!.currency, displayCurrency, creationDate);
-      var dailyTotals = dailyTotalsByCategory.putIfAbsent(movement.category, () => List<double>.filled(dayCount, 0));
-      dailyTotals[utilsService.dayIndex(startDate, creationDate)] += amount;
+      var monthlyTotals = monthlyTotalsByCategory.putIfAbsent(movement.category, () => List<double>.filled(monthCount, 0));
+      monthlyTotals[utilsService.monthIndex(startMonth, creationDate)] += amount;
     }
-    return dailyTotalsByCategory.entries.map((entry) => CategoryMonthlyExpenses(category: entry.key, monthlyTotals: entry.value)).toList();
+    return monthlyTotalsByCategory.entries.map((entry) => CategoryMonthlyExpenses(category: entry.key, monthlyTotals: entry.value)).toList();
   }
 }

@@ -77,7 +77,7 @@ evolved with a migration — see [migrations.md](migrations.md).
 ## Typed query results
 
 A repository method that returns an aggregate or any shape that is **not** a persisted entity
-(sums per category, series per day, …) returns a small named class, never
+(sums per category, series per month, …) returns a small named class, never
 `Map<String, Object?>` or any other generic container. The views then read typed fields
 instead of casting map keys (`row.category`, not `row['category'] as String`).
 
@@ -90,18 +90,18 @@ instead of casting map keys (`row.category`, not `row['category'] as String`).
 - Derived values that belong to the shape (e.g. a total) are getters on the class, not helpers
   re-implemented in each view.
 
-Reference: `CategoryDailyExpenses` in
+Reference: `CategoryMonthlyExpenses` in
 [movements.repository.dart](../lib/repositories/movements.repository.dart), returned by
-`getExpensesByCategoryByDay`:
+`getExpensesByCategoryByMonth`:
 
 ```dart
-class CategoryDailyExpenses {
+class CategoryMonthlyExpenses {
   final String category;
-  final List<double> dailyTotals;
+  final List<double> monthlyTotals;
 
-  const CategoryDailyExpenses({ required this.category, required this.dailyTotals });
+  const CategoryMonthlyExpenses({ required this.category, required this.monthlyTotals });
 
-  double get total => dailyTotals.fold<double>(0, (sum, value) => sum + value);
+  double get total => monthlyTotals.fold<double>(0, (sum, value) => sum + value);
 }
 ```
 

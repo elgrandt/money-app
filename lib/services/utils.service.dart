@@ -154,10 +154,8 @@ class UtilsService {
     return resolved ?? rateHistory.first;
   }
 
-  int dayIndex(DateTime startDate, DateTime date) {
-    return DateTime.utc(date.year, date.month, date.day)
-        .difference(DateTime.utc(startDate.year, startDate.month, startDate.day))
-        .inDays;
+  int monthIndex(DateTime startMonth, DateTime date) {
+    return (date.year - startMonth.year) * 12 + date.month - startMonth.month;
   }
 
   String beautifyCurrency(double number, Currency currency) {
