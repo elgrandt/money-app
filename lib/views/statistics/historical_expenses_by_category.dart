@@ -69,6 +69,10 @@ class _HistoricalExpensesByCategoryChartState extends State<HistoricalExpensesBy
     return rows!.first.dailyTotals.length;
   }
 
+  bool get isSingleDay {
+    return dayCount == 1;
+  }
+
   List<CategoryDailyExpenses> get sortedRows {
     var sorted = [...rows!];
     sorted.sort((a, b) => b.total.compareTo(a.total));
@@ -207,7 +211,7 @@ class _HistoricalExpensesByCategoryChartState extends State<HistoricalExpensesBy
       spots: [for (var i = 0; i < row.dailyTotals.length; i++) FlSpot(i.toDouble(), row.dailyTotals[i])],
       color: categoryColors[row.category],
       barWidth: lineWidth,
-      dotData: const FlDotData(show: false),
+      dotData: FlDotData(show: isSingleDay),
     );
   }
 
@@ -353,8 +357,9 @@ class _HistoricalExpensesByCategoryChartState extends State<HistoricalExpensesBy
   }
 
   Widget buildBottomTitle(double value, TitleMeta meta) {
+    if (value != value.toInt() || value >= dayCount) return const SizedBox();
     var date = dateAt(value.toInt());
-    if (value != value.toInt() || date.day != 1) return const SizedBox();
+    if (date.day != 1) return const SizedBox();
     return SideTitleWidget(
       axisSide: meta.axisSide,
       angle: -pi / 2,

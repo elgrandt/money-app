@@ -16,7 +16,7 @@ per-account totals pie.
 
 ## Key repository methods
 
-`MovementsRepository` — [movements.repository.dart:179-239](../../lib/repositories/movements.repository.dart#L179-L239):
+`MovementsRepository` — [movements.repository.dart:186-274](../../lib/repositories/movements.repository.dart#L186-L274):
 
 - `getExpensesByCategory(account, movementType, startDate, endDate, displayCurrency)` — sums
   amounts per category, converting each movement into `displayCurrency` before aggregating.
@@ -64,7 +64,7 @@ por arriba.
   data aggregates sensibly. The conversion is **date-based**: `convertCurrenciesAt` values each
   movement at the rate that was in effect on its own `creationDate` (see
   [currency.md](currency.md)), not at today's rate
-  ([movements.repository.dart:193-205](../../lib/repositories/movements.repository.dart#L193-L205)).
+  ([movements.repository.dart:202-214](../../lib/repositories/movements.repository.dart#L202-L214)).
 - **Currency toggle re-queries** — the expenses-by-category table's currency/percent toggle
   re-runs `getExpensesByCategory` with the new `displayCurrency` (each movement re-converted at
   its own date) rather than re-converting the already-aggregated totals
