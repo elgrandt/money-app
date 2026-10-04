@@ -154,6 +154,10 @@ class UtilsService {
     return resolved ?? rateHistory.first;
   }
 
+  int monthIndex(DateTime startMonth, DateTime date) {
+    return (date.year - startMonth.year) * 12 + date.month - startMonth.month;
+  }
+
   String beautifyCurrency(double number, Currency currency) {
     var formatter = NumberFormat.currency(locale: 'es_AR', name: currency.name, symbol: getCurrencySymbol(currency));
     formatter.minimumIntegerDigits = 1;

@@ -8,6 +8,7 @@ import 'package:money/views/generics/loader.dart';
 import 'package:money/views/generics/navbar.dart';
 import 'package:money/views/statistics/expenses_by_category.dart';
 import 'package:money/views/statistics/expenses_by_day.dart';
+import 'package:money/views/statistics/historical_expenses_by_category.dart';
 
 class Statistics extends StatefulWidget {
   const Statistics({super.key});
@@ -89,6 +90,7 @@ class _StatisticsState extends State<Statistics> {
       'Ninguno',
       'Gastos por categoría',
       'Gastos por día',
+      'Gastos por categoría históricos',
     ];
     return ListTile(
       title: const Text('Tipo de gráfico'),
@@ -109,6 +111,8 @@ class _StatisticsState extends State<Statistics> {
       return ExpensesByCategoryChart(account: account);
     } else if (chartType == 'Gastos por día') {
       return ExpensesByDayChart(account: account);
+    } else if (chartType == 'Gastos por categoría históricos') {
+      return HistoricalExpensesByCategoryChart(account: account);
     } else {
       return Container();
     }

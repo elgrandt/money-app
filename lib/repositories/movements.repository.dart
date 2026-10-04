@@ -8,6 +8,15 @@ import 'package:money/services/database.service.dart';
 import 'package:money/services/utils.service.dart';
 import 'package:sqflite/sqflite.dart';
 
+class CategoryMonthlyExpenses {
+  final String category;
+  final List<double> monthlyTotals;
+
+  const CategoryMonthlyExpenses({ required this.category, required this.monthlyTotals });
+
+  double get total => monthlyTotals.fold<double>(0, (sum, value) => sum + value);
+}
+
 class MovementsRepository extends BaseRepository<Movement> {
   static List<DatabaseColumnDefinition> movementColumns = [
     DatabaseColumnDefinition('id', DatabaseColumnType.INTEGER, primaryKey: PrimaryKeyDefinition(autoincrement: true)),
@@ -238,5 +247,29 @@ class MovementsRepository extends BaseRepository<Movement> {
       }
       return map;
     }).entries.map((entry) => {'date': entry.key, 'total': entry.value}).toList();
+  }
+
+  Future<List<CategoryMonthlyExpenses>> getExpensesByCategoryByMonth(Account? account, DateTime startMonth, DateTime endMonth, Currency displayCurrency) async {
+    var where = 'type = ? AND creationDate >= ? AND creationDate < ?';
+    List<Object?> whereArgs = [
+      MovementType.REMOVE.name,
+      DateTime(startMonth.year, startMonth.month).toIso8601String(),
+      DateTime(endMonth.year, endMonth.month + 1).toIso8601String(),
+    ];
+    if (account != null) {
+      where += ' AND (sourceId = ? OR targetId = ?)';
+      whereArgs.add(account.id);
+      whereArgs.add(account.id);
+    }
+    var movements = await find(where: where, args: whereArgs);
+    var monthCount = utilsService.monthIndex(startMonth, endMonth) + 1;
+    Map<String, List<double>> monthlyTotalsByCategory = {};
+    for (var movement in movements) {
+      var creationDate = movement.creationDate!;
+      var amount = utilsService.convertCurrenciesAt(movement.amount, movement.source!.currency, displayCurrency, creationDate);
+      var monthlyTotals = monthlyTotalsByCategory.putIfAbsent(movement.category, () => List<double>.filled(monthCount, 0));
+      monthlyTotals[utilsService.monthIndex(startMonth, creationDate)] += amount;
+    }
+    return monthlyTotalsByCategory.entries.map((entry) => CategoryMonthlyExpenses(category: entry.key, monthlyTotals: entry.value)).toList();
   }
 }

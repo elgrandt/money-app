@@ -74,6 +74,37 @@ evolved with a migration — see [migrations.md](migrations.md).
 - Enums → `TEXT` via `.name`; read back with `Enum.values.byName(...)` (or `firstWhere`).
 - Booleans → `1`/`0`; read back with `== 1`.
 
+## Typed query results
+
+A repository method that returns an aggregate or any shape that is **not** a persisted entity
+(sums per category, series per month, …) returns a small named class, never
+`Map<String, Object?>` or any other generic container. The views then read typed fields
+instead of casting map keys (`row.category`, not `row['category'] as String`).
+
+- The class is **plain and immutable** (`final` fields, `const` constructor) and does **not**
+  extend `BaseModel`: it has no id and no table. `lib/models/` stays reserved for persisted
+  entities.
+- It is declared **in the repository file that produces it**, above the repository class, and
+  views import it from there — the same precedent as `CurrencyMapping` / `CurrencyConfig` in
+  [utils.service.dart](../lib/services/utils.service.dart).
+- Derived values that belong to the shape (e.g. a total) are getters on the class, not helpers
+  re-implemented in each view.
+
+Reference: `CategoryMonthlyExpenses` in
+[movements.repository.dart](../lib/repositories/movements.repository.dart), returned by
+`getExpensesByCategoryByMonth`:
+
+```dart
+class CategoryMonthlyExpenses {
+  final String category;
+  final List<double> monthlyTotals;
+
+  const CategoryMonthlyExpenses({ required this.category, required this.monthlyTotals });
+
+  double get total => monthlyTotals.fold<double>(0, (sum, value) => sum + value);
+}
+```
+
 ## Change events
 
 Every write emits a `TableUpdateEvent` on the repository's `EventEmitter` —
