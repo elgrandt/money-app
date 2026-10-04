@@ -86,8 +86,12 @@ por arriba.
 - **Historical chart period options** — `3 meses` / `6 meses` / `1 año` are calendar months
   ending at the current month (3 / 6 / 12 points); `Custom` covers the whole months touched by the
   chosen range.
-- **Historical chart current month** — always included and partial; the last segment (previous
-  month → current month) is dashed and the selection header shows ` (en curso)`.
+- **Historical chart current month** — included and partial in `3 meses` / `6 meses` / `1 año`,
+  and in a `Custom` range that ends in the current month; the last segment (previous month →
+  current month) is dashed and the selection header shows ` (en curso)`. A `Custom` range that
+  ends earlier has neither.
+- **Historical chart Y axis** — thousands are shown with one decimal (`1.5k`), so the explicit
+  tick interval never produces repeated labels.
 - **Historical chart variation** — `(month − previous) / previous × 100`, rounded, with sign
   (`+25%`); red when it rose, green when it fell, grey for `0%`. It is `—` for the first month of
   the period and whenever the previous month is 0.

@@ -247,7 +247,7 @@ class _HistoricalExpensesByCategoryChartState extends State<HistoricalExpensesBy
 
   String compactAmount(double value) {
     if (value >= 1000000) return '${ (value / 1000000).toStringAsFixed(1) }M';
-    if (value >= 1000) return '${ (value / 1000).toStringAsFixed(0) }k';
+    if (value >= 1000) return '${ (value / 1000).toStringAsFixed(1).replaceAll('.0', '') }k';
     return value.toStringAsFixed(0);
   }
 
