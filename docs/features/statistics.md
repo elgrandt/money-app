@@ -7,9 +7,10 @@ Three chart views summarize movements, filterable by account, movement type, and
 - **Expenses by category** — a pie chart plus a table; the table cell toggles between currency
   amounts and percentages.
 - **Expenses by day** — a bar chart over a day range, with an optional accumulated mode.
-- **Historical expenses by category** — a daily line chart with one line per category, currency
-  and period selectors (`3 meses` / `6 meses` / `1 año` / `Custom`), and a category list that
-  enables/disables each line. Expenses only.
+- **Historical expenses by category** — a monthly line chart (one point per month and category,
+  current month included) to see how each category's spending varies month to month, with
+  currency and period selectors (`3 meses` / `6 meses` / `1 año` / `Custom`) and a category list
+  that enables/disables each line and shows the month-over-month % variation. Expenses only.
 
 The same charts appear on the home **dashboard**, alongside the total-patrimony figure and a
 per-account totals pie.
@@ -22,11 +23,12 @@ per-account totals pie.
   amounts per category, converting each movement into `displayCurrency` before aggregating.
 - `getExpensesByDay(account, movementType, startDate, displayCurrency)` — sums amounts per
   calendar day, converting each movement into `displayCurrency` before aggregating.
-- `getExpensesByCategoryByDay(account, startDate, endDate, displayCurrency)` — expenses
-  (`REMOVE`) grouped first by category and then by local calendar day; returns
-  a `CategoryDailyExpenses` (`category`, `dailyTotals`, `total`) per category with a fixed-length list (one entry per day from
-  `startDate` to `endDate`, zeros on days without spending). The upper bound is exclusive on the
-  next midnight and the dates are bound with `toIso8601String()` to match the stored format.
+- `getExpensesByCategoryByMonth(account, startMonth, endMonth, displayCurrency)` — expenses
+  (`REMOVE`) grouped first by category and then by calendar month (both end months included);
+  returns a `CategoryMonthlyExpenses` (`category`, `monthlyTotals`, `total`) per category with a
+  fixed-length list (one entry per month, zeros in months without spending). The upper bound is
+  exclusive on the first day of the month after `endMonth`, and the dates are bound with
+  `toIso8601String()` to match the stored format.
 
 `getExpensesByDay` filtra por tipo, opcionalmente por cuenta y opcionalmente desde una fecha de
 inicio; `getExpensesByCategory` además acepta una fecha de fin (`endDate`) para acotar el rango
@@ -46,10 +48,10 @@ por arriba.
   titles in `doCalculations`.
 - [historical_expenses_by_category.dart](../../lib/views/statistics/historical_expenses_by_category.dart) —
   `fl_chart` line chart; `CurrencySelector` + period selector (`Custom` abre
-  `DateRangeSelectorDialog`). Tocar o arrastrar sobre el gráfico marca un día con una línea
-  vertical (sin tooltip) y la lista de categorías muestra el monto de ese día; tocar una
-  categoría la habilita/deshabilita (tachada cuando está deshabilitada), con botones
-  `Habilitar todas` / `Deshabilitar todas`.
+  `DateRangeSelectorDialog`). Tocar o arrastrar sobre el gráfico marca un mes con una línea
+  vertical (sin tooltip) y la lista de categorías muestra el monto de ese mes y la variación
+  porcentual contra el mes anterior; tocar una categoría la habilita/deshabilita (tachada
+  cuando está deshabilitada), con botones `Habilitar todas` / `Deshabilitar todas`.
 - [all_expenses.dart](../../lib/views/statistics/all_expenses.dart) — the dashboard's "latest
   movements" section (a filtered `MovementsList`).
 - [dashboard.dart](../../lib/views/home/dashboard.dart) — composes total, totals pie, latest
@@ -77,11 +79,18 @@ por arriba.
   chart: `week` / `month` / `year` / all.
 - **Accumulated mode** — recomputes the bar groups as a running sum and adjusts the Y range
   ([expenses_by_day.dart:69-126](../../lib/views/statistics/expenses_by_day.dart#L69-L126)).
-- **Historical chart day granularity** — data is daily; the X axis only labels the first day of
-  each month (`MM/yy`). A movement belongs to its *local* calendar day (no `toUtc()`);
-  `UtilsService.dayIndex` counts days through UTC dates so a DST change cannot shift the index.
-- **Historical chart period options** — `3 meses` / `6 meses` / `1 año` / `Custom`, always ending
-  today (or the custom range's end).
+- **Historical chart month granularity** — data is monthly; a movement belongs to the month of its
+  *local* `creationDate` (no `toUtc()`). `UtilsService.monthIndex` is integer year/month
+  arithmetic, so there is no DST issue. The X axis has one `MM/yy` label per month (one every
+  `ceil(months / 12)` months beyond 12, only possible with `Custom`).
+- **Historical chart period options** — `3 meses` / `6 meses` / `1 año` are calendar months
+  ending at the current month (3 / 6 / 12 points); `Custom` covers the whole months touched by the
+  chosen range.
+- **Historical chart current month** — always included and partial; the last segment (previous
+  month → current month) is dashed and the selection header shows ` (en curso)`.
+- **Historical chart variation** — `(month − previous) / previous × 100`, rounded, with sign
+  (`+25%`); red when it rose, green when it fell, grey for `0%`. It is `—` for the first month of
+  the period and whenever the previous month is 0.
 - **Historical chart colors and selection** — colors use `Random(134)` over categories sorted by
   period total (same algorithm as the category table) and do not change when categories are
   toggled. `disabledCategories` and the period survive currency/period/account changes; changing
