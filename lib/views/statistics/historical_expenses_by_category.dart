@@ -24,7 +24,7 @@ class HistoricalExpensesByCategoryChart extends StatefulWidget {
 }
 
 class _HistoricalExpensesByCategoryChartState extends State<HistoricalExpensesByCategoryChart> {
-  List<CategoryDailyExpenses>? rows;
+  List<CategoryMonthlyExpenses>? rows;
   DateTime? rowsStartDate;
   late Currency selectedCurrency;
   String selectedPeriod = '3-months';
@@ -66,20 +66,20 @@ class _HistoricalExpensesByCategoryChartState extends State<HistoricalExpensesBy
   }
 
   int get dayCount {
-    return rows!.first.dailyTotals.length;
+    return rows!.first.monthlyTotals.length;
   }
 
   bool get isSingleDay {
     return dayCount == 1;
   }
 
-  List<CategoryDailyExpenses> get sortedRows {
+  List<CategoryMonthlyExpenses> get sortedRows {
     var sorted = [...rows!];
     sorted.sort((a, b) => b.total.compareTo(a.total));
     return sorted;
   }
 
-  List<CategoryDailyExpenses> get activeRows {
+  List<CategoryMonthlyExpenses> get activeRows {
     return sortedRows.where((row) => !isDisabled(row.category)).toList();
   }
 
@@ -93,7 +93,7 @@ class _HistoricalExpensesByCategoryChartState extends State<HistoricalExpensesBy
 
   double get chartMaxY {
     var maxValue = activeRows
-        .expand((row) => row.dailyTotals)
+        .expand((row) => row.monthlyTotals)
         .fold<double>(0, max);
     return maxValue == 0 ? 1 : maxValue;
   }
@@ -206,9 +206,9 @@ class _HistoricalExpensesByCategoryChartState extends State<HistoricalExpensesBy
     return value.toStringAsFixed(0);
   }
 
-  LineChartBarData toLineBar(CategoryDailyExpenses row) {
+  LineChartBarData toLineBar(CategoryMonthlyExpenses row) {
     return LineChartBarData(
-      spots: [for (var i = 0; i < row.dailyTotals.length; i++) FlSpot(i.toDouble(), row.dailyTotals[i])],
+      spots: [for (var i = 0; i < row.monthlyTotals.length; i++) FlSpot(i.toDouble(), row.monthlyTotals[i])],
       color: categoryColors[row.category],
       barWidth: lineWidth,
       dotData: FlDotData(show: isSingleDay),
@@ -222,7 +222,7 @@ class _HistoricalExpensesByCategoryChartState extends State<HistoricalExpensesBy
     await databaseService.initialized;
     try {
       logger.d('Getting historical expenses by category');
-      var result = await databaseService.movementsRepository.getExpensesByCategoryByDay(widget.account, startDate, endDate, selectedCurrency);
+      var result = await databaseService.movementsRepository.getExpensesByCategoryByMonth(widget.account, startDate, endDate, selectedCurrency);
       if (!mounted || requestId != lastRequestId) return;
       setState(() {
         rows = result;
@@ -407,7 +407,7 @@ class _HistoricalExpensesByCategoryChartState extends State<HistoricalExpensesBy
     );
   }
 
-  Widget buildCategoryRow(BuildContext context, CategoryDailyExpenses row) {
+  Widget buildCategoryRow(BuildContext context, CategoryMonthlyExpenses row) {
     var category = row.category;
     return GestureDetector(
       behavior: HitTestBehavior.opaque,
@@ -451,8 +451,8 @@ class _HistoricalExpensesByCategoryChartState extends State<HistoricalExpensesBy
     );
   }
 
-  Widget buildCategoryDayAmount(BuildContext context, CategoryDailyExpenses row) {
-    var amount = row.dailyTotals[selectedDayIndex!];
+  Widget buildCategoryDayAmount(BuildContext context, CategoryMonthlyExpenses row) {
+    var amount = row.monthlyTotals[selectedDayIndex!];
     return Padding(
       padding: const EdgeInsets.only(right: 10),
       child: Text(utilsService.beautifyCurrency(amount, selectedCurrency), style: categoryTextStyle),

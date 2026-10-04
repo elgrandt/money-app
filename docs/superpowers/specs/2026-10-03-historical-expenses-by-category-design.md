@@ -1,265 +1,279 @@
 # Gráfico "Gastos por categoría históricos"
 
-Fecha: 2026-10-03
+Fecha: 2026-10-03 (rediseño mensual: 2026-10-04)
 
 ## Objetivo
 
 Agregar a la sección de Estadísticas un tercer tipo de gráfico, **"Gastos por categoría
-históricos"**, que muestra cómo evoluciona en el tiempo el gasto de cada categoría: un gráfico de
-líneas (eje horizontal = fecha, eje vertical = gasto) con una línea por categoría, más una lista
-de categorías que permite habilitar/deshabilitar cada línea.
+históricos"**, pensado para ver la **varianza mes a mes del gasto de cada categoría** (por
+ejemplo: en supermercado gasté 80 USD el mes pasado y 100 USD este mes). Es un gráfico de
+líneas con **un punto por mes y por categoría** (eje horizontal = mes, eje vertical = gasto),
+más una lista de categorías que permite habilitar/deshabilitar cada línea y que muestra la
+variación porcentual contra el mes anterior.
 
 Orden de la vista, de arriba a abajo:
 
 1. Selector de moneda (`CurrencySelector`).
 2. Selector de período: `3 meses` / `6 meses` / `1 año` / `Custom`.
 3. Gráfico de líneas.
-4. Botones "habilitar todas" / "deshabilitar todas".
-5. Lista de categorías con su color, sin montos.
+4. Botones "Habilitar todas" / "Deshabilitar todas".
+5. Lista de categorías con su color.
+
+### Historia del diseño
+
+La primera versión agrupaba por **día** (una línea diaria por categoría). Funcionó, pero con 30
+o más puntos por mes se ve el ruido del día a día y no la comparación entre meses, que es lo
+que se quiere ver. Se rediseñó a granularidad **mensual**. El código diario se reemplaza, no
+coexiste.
 
 ## Contexto actual
 
 - [statistics.dart](../../../lib/views/statistics/statistics.dart) tiene un selector de cuenta y
-  un selector de tipo de gráfico (`Ninguno` / `Gastos por categoría` / `Gastos por día`); cada
-  gráfico es un widget que recibe `Account? account`.
+  un selector de tipo de gráfico (`Ninguno` / `Gastos por categoría` / `Gastos por día` /
+  `Gastos por categoría históricos`); cada gráfico es un widget que recibe `Account? account`.
+- [historical_expenses_by_category.dart](../../../lib/views/statistics/historical_expenses_by_category.dart)
+  ya existe con la versión diaria: selectores, colores estables (`Random(134)`), habilitar y
+  deshabilitar categorías, selección de un punto con línea vertical y estados vacíos. El
+  rediseño reutiliza todo eso y cambia la granularidad.
 - [expenses_by_category.dart](../../../lib/views/statistics/expenses_by_category.dart) es el
-  gráfico hermano: `ButtonSelector` para el período (con `Custom` →
-  `DateRangeSelectorDialog`), colores generados con `Random(colorSeed)` (`colorSeed = 134`) sobre
-  la lista ordenada por total descendente, y una tabla con el círculo de color y el nombre.
-- [expenses_by_day.dart](../../../lib/views/statistics/expenses_by_day.dart) ya usa `fl_chart`
-  (`BarChart`) con títulos de ejes compactos (`k` / `M`) y la convención de grilla/bordes grises.
-- [getExpensesByCategory](../../../lib/repositories/movements.repository.dart#L177-L206)
-  agrega por categoría convirtiendo cada movimiento con `convertCurrenciesAt` (tasa vigente en
-  la `creationDate` del movimiento). No existe una agregación por categoría **y** por día.
-- [CurrencySelector](../../../lib/views/generics/currency_selector.dart) ya existe como widget
-  genérico (`selected` + `onSelectionChange`).
+  gráfico hermano: mismos colores y mismo criterio para `Custom` (`DateRangeSelectorDialog`).
+- `MovementsRepository.getExpensesByCategoryByDay` y `UtilsService.dayIndex` (versión diaria)
+  se reemplazan por sus equivalentes mensuales.
+- [docs/data-layer.md](../../data-layer.md) documenta el patrón "Typed query results" y usa la
+  clase de este gráfico como referencia.
 
 ## Alcance
 
 Dentro de alcance:
 
-- Nuevo método de repositorio `getExpensesByCategoryByDay`.
-- Nueva vista `historical_expenses_by_category.dart`.
-- Nueva opción en el selector de tipo de gráfico de `statistics.dart`.
-- Docs: `features/statistics.md`, `data-layer.md` (patrón de resultados tipados) y
-  `tech-debt.md` (los dos métodos existentes que siguen devolviendo mapas).
+- Reemplazar el método de repositorio diario por `getExpensesByCategoryByMonth` y el helper
+  `dayIndex` por `monthIndex`.
+- Reescribir la vista a granularidad mensual, con variación porcentual.
+- Docs: `features/statistics.md` y `data-layer.md` (nombre de la clase de referencia).
 
 Fuera de alcance:
 
 - No se tocan modelos, migraciones, el dashboard ni los otros dos gráficos.
 - No hay selector de tipo de movimiento: el gráfico es solo de **gastos** (`REMOVE`).
-- No hay suavizado, zoom ni agrupación configurable del eje X.
+- No hay suavizado, zoom ni agrupación configurable (la granularidad es siempre mensual).
+- No se muestra la diferencia en monto, solo el porcentaje.
 
 ## Diseño
 
-### 1. Repositorio
+### 1. Renombres (los hace el usuario con el IDE)
 
-Nuevo método en `MovementsRepository`, junto a `getExpensesByCategory`:
+Por la regla del proyecto, los renombres los hace el usuario con el rename del IDE para que
+actualice todas las referencias; después se verifica que no quede ninguna sin cambiar:
+
+| Antes | Después |
+|-------|---------|
+| `CategoryDailyExpenses` | `CategoryMonthlyExpenses` |
+| campo `dailyTotals` | `monthlyTotals` |
+| `getExpensesByCategoryByDay` | `getExpensesByCategoryByMonth` |
+
+`UtilsService.dayIndex` no se renombra: se **elimina** y se agrega `monthIndex` (ver abajo).
+
+### 2. Repositorio
+
+En `MovementsRepository`, en lugar de `getExpensesByCategoryByDay`:
 
 ```dart
-Future<List<CategoryDailyExpenses>> getExpensesByCategoryByDay(
-    Account? account, DateTime startDate, DateTime endDate, Currency displayCurrency)
+Future<List<CategoryMonthlyExpenses>> getExpensesByCategoryByMonth(
+    Account? account, DateTime startMonth, DateTime endMonth, Currency displayCurrency)
 ```
 
-El resultado es una clase propia, no un mapa genérico (patrón "Typed query results" de
-[data-layer.md](../../data-layer.md)). Se declara en `movements.repository.dart`, encima de
-`MovementsRepository`; es simple e inmutable y no extiende `BaseModel` (no tiene id ni tabla):
+y la clase (sigue el patrón "Typed query results": simple, inmutable, sin `BaseModel`, declarada
+en `movements.repository.dart`):
 
 ```dart
-class CategoryDailyExpenses {
+class CategoryMonthlyExpenses {
   final String category;
-  final List<double> dailyTotals;
+  final List<double> monthlyTotals;
 
-  const CategoryDailyExpenses({ required this.category, required this.dailyTotals });
+  const CategoryMonthlyExpenses({ required this.category, required this.monthlyTotals });
 
-  double get total => dailyTotals.fold<double>(0, (sum, value) => sum + value);
+  double get total => monthlyTotals.fold<double>(0, (sum, value) => sum + value);
 }
 ```
 
-- Filtra `type = REMOVE`, opcionalmente por cuenta (`sourceId = ? OR targetId = ?`), y por
-  rango de días calendario: `creationDate >= medianoche(startDate)` y
-  `creationDate < medianoche(día siguiente a endDate)`. El límite superior es **exclusivo** sobre
-  el día siguiente, así el último día entra completo sin depender de milisegundos.
-  La comparación es de texto, así que los parámetros deben tener el **mismo formato** que lo
-  guardado: `creationDate` se persiste con `toIso8601String()` (separador `T`), por lo que el
-  método nuevo pasa `toIso8601String()`. Las consultas existentes pasan `toString()` (separador
-  espacio); como `'T'` (0x54) es mayor que `' '` (0x20), con `<= endDate` dejan afuera los
-  movimientos del propio día de fin (ej. `2026-10-03T10:00:00.000 <= 2026-10-03 23:59:59.000` es
-  falso). Ese defecto existente queda fuera de alcance de esta feature y se registra en
-  `docs/tech-debt.md`.
+- `startMonth` y `endMonth` son fechas cualquiera dentro del mes inicial y del mes final (ambos
+  meses incluidos); el método usa solo su año y mes.
+- Filtra `type = REMOVE` y, opcionalmente, por cuenta (`sourceId = ? OR targetId = ?`).
+- Rango de fechas: `creationDate >= primer día de startMonth` y
+  `creationDate < primer día del mes siguiente a endMonth`. El límite superior es **exclusivo**.
+  La comparación es de texto, así que los parámetros se pasan con `toIso8601String()`, el mismo
+  formato con el que se guarda `creationDate` (las consultas existentes pasan `toString()`, con
+  espacio en lugar de `T`, y por eso excluyen el último día; ver
+  [tech-debt.md](../../tech-debt.md). Esa deuda no se arregla acá).
 - Convierte cada movimiento con `utilsService.convertCurrenciesAt(amount, source.currency,
   displayCurrency, creationDate)`, igual que los otros métodos.
-- Agrupa **primero por categoría y luego por día**, porque el gráfico y la lista consumen una
-  serie por categoría. Devuelve un `CategoryDailyExpenses` por categoría con gasto en el
-  período.
-- `dailyTotals` tiene siempre el mismo largo para todas las categorías: un valor por cada día
-  calendario entre `startDate` y `endDate` (ambos inclusive), con `0.0` en los días sin gasto.
-  Su largo es `dayIndex(startDate, endDate) + 1`.
-- **Día de un movimiento.** `creationDate` se guarda con `toIso8601String()` de un `DateTime`
-  local (sin zona horaria) y se lee con `DateTime.tryParse`, que lo interpreta como local. El
-  día de un movimiento es el de su hora de pared local: se toman `year` / `month` / `day` del
-  valor local y se descarta la hora. **Nunca** se llama `toUtc()` sobre `creationDate` (un
-  movimiento de las 22:00 en UTC-3 cambiaría de día).
-- **Índice de día.** Vive en `UtilsService.dayIndex(startDate, date)` (lo usan el repositorio y la
-  vista). El índice de un día respecto de `startDate` es la cantidad de días
-  calendario entre ambos. Se calcula con componentes locales y `DateTime.utc` solo como
-  herramienta para contar: la diferencia entre dos fechas UTC siempre es un múltiplo exacto de
-  24 h, mientras que entre fechas locales un cambio de horario de verano puede dar 23 o 25 h y
-  `inDays` perder un día.
+- Agrupa **primero por categoría y luego por mes**. Devuelve un `CategoryMonthlyExpenses` por
+  categoría con gasto en el período. `monthlyTotals` tiene siempre el mismo largo para todas las
+  categorías, `monthIndex(startMonth, endMonth) + 1`, con `0.0` en los meses sin gasto.
+- **Mes de un movimiento**: el de su `creationDate` local (año y mes del valor local; nunca
+  `toUtc()`).
+- `UtilsService.monthIndex(startMonth, date)` devuelve la cantidad de meses calendario entre
+  ambos: `(date.year - startMonth.year) * 12 + date.month - startMonth.month`. Es aritmética
+  entera sobre año y mes, sin fechas de por medio, por lo que no hay problema de horario de
+  verano.
+- No ordena: la vista ordena por `total` de mayor a menor, como "Gastos por categoría".
+- Es independiente de `getExpensesByCategory` / `getExpensesByDay`: no se extrae lógica
+  compartida.
 
-  ```dart
-  int dayIndex(DateTime startDate, DateTime date) =>
-      DateTime.utc(date.year, date.month, date.day)
-          .difference(DateTime.utc(startDate.year, startDate.month, startDate.day))
-          .inDays;
-  ```
-- No ordena: la vista ordena por `total` (getter de la clase) de mayor a menor, como hace hoy
-  "Gastos por categoría".
-- `startDate` y `endDate` son obligatorios (el período siempre está acotado).
-- No se extrae lógica compartida con `getExpensesByCategory` / `getExpensesByDay`: el método es
-  independiente, como los otros dos.
+### 3. Vista `HistoricalExpensesByCategoryChart`
 
-### 2. Vista `HistoricalExpensesByCategoryChart`
-
-Nuevo archivo `lib/views/statistics/historical_expenses_by_category.dart`, `StatefulWidget` con
-`final Account? account` (mismo contrato que los otros gráficos).
-
-Estado:
+Mismo archivo y mismo contrato (`final Account? account`). Estado (sin cambios salvo lo
+marcado):
 
 - `Currency selectedCurrency` — inicial: `widget.account?.currency ?? Currency.USD`.
-- `String selectedPeriod` — valores `'3-months'`, `'6-months'`, `'1-year'`, `'custom'`; default
-  `'3-months'`.
+- `String selectedPeriod` — `'3-months'` (default), `'6-months'`, `'1-year'`, `'custom'`.
 - `DateTimeRange? customRange`.
-- `List<CategoryDailyExpenses>? rows` — resultado del repositorio (`null` = cargando).
-- `Set<String> disabledCategories` — categorías deshabilitadas (vacío = todas activas).
-- `int? selectedDayIndex` — índice del día marcado en el gráfico (`null` = ninguno).
+- `List<CategoryMonthlyExpenses>? rows` y `DateTime? rowsStartMonth` (primer mes de los datos
+  cargados; `null` = cargando).
+- `Set<String> disabledCategories` — vacío = todas activas.
+- `int? selectedMonthIndex` — mes marcado en el gráfico (reemplaza a `selectedDayIndex`).
 - `final colorSeed = 134`.
 
-Fechas del período (getters separados, convención del proyecto):
+Período en **meses calendario**, con dos getters que devuelven el primer día de un mes
+(`selectedPeriodStartMonth`, `selectedPeriodEndMonth`), siendo `now` la fecha actual:
 
-| Opción     | `selectedPeriodStartDate`                     | `selectedPeriodEndDate`     |
-|------------|-----------------------------------------------|-----------------------------|
-| `3-months` | `DateTime(now.year, now.month - 3, now.day)`  | hoy a las 23:59:59          |
-| `6-months` | `DateTime(now.year, now.month - 6, now.day)`  | hoy a las 23:59:59          |
-| `1-year`   | `DateTime(now.year - 1, now.month, now.day)`  | hoy a las 23:59:59          |
-| `custom`   | `customRange.start` (00:00)                   | `customRange.end` (23:59:59)|
+| Opción     | `selectedPeriodStartMonth`                                | `selectedPeriodEndMonth`                 |
+|------------|-----------------------------------------------------------|------------------------------------------|
+| `3-months` | `DateTime(now.year, now.month - 2)`                       | `DateTime(now.year, now.month)`          |
+| `6-months` | `DateTime(now.year, now.month - 5)`                       | `DateTime(now.year, now.month)`          |
+| `1-year`   | `DateTime(now.year, now.month - 11)`                      | `DateTime(now.year, now.month)`          |
+| `custom`   | `DateTime(customRange.start.year, customRange.start.month)` | `DateTime(customRange.end.year, customRange.end.month)` |
 
-El botón `Custom` abre `DateRangeSelectorDialog` (`initialRange: customRange`,
-`lastDate: DateTime.now()`); si se cancela no cambia nada, igual que en "Gastos por categoría".
-Cambiar moneda, período o cuenta vuelve a consultar el repositorio. En `didUpdateWidget`, si
-cambia la cuenta, `selectedCurrency` pasa a `widget.account?.currency ?? Currency.USD`; el
-período, `customRange` y `disabledCategories` no se tocan. Cada nueva consulta limpia
-`selectedDayIndex`.
+Es decir, `3 meses` = mes actual y los 2 anteriores (3 puntos), `6 meses` = 6 puntos,
+`1 año` = 12 puntos, y `Custom` se ajusta a los meses **completos** que toca el rango elegido
+(un rango del 15/03 al 10/05 muestra marzo, abril y mayo). El **mes en curso está siempre
+incluido** y es parcial (ver más abajo).
 
-Cálculos derivados (getters/métodos, no se guardan):
+`Custom` abre `DateRangeSelectorDialog` (`initialRange: customRange`,
+`lastDate: DateTime.now()`); si se cancela no cambia nada. Cambiar moneda, período o cuenta
+vuelve a consultar el repositorio. En `didUpdateWidget`, si cambia la cuenta, `selectedCurrency`
+pasa a `widget.account?.currency ?? Currency.USD`; el período, `customRange` y
+`disabledCategories` no se tocan. Cada nueva consulta limpia `selectedMonthIndex`. Se mantiene
+la protección contra respuestas fuera de orden (`lastRequestId`).
 
-- **Categorías**: las categorías presentes en `rows`, ordenadas por total del período
-  descendente. Ese orden alimenta tanto la lista como los colores.
+Cálculos derivados (getters, no se guardan):
+
+- **Categorías**: las de `rows`, ordenadas por `total` descendente. Ese orden alimenta la lista
+  y los colores.
 - **Colores**: `Random(colorSeed)` recorriendo las categorías en ese orden y eligiendo
-  `Colors.primaries[generator.nextInt(Colors.primaries.length)].shade700`, el mismo algoritmo de
-  `buildTable` en "Gastos por categoría" (mismo período y moneda → mismos colores). El color de
-  una categoría **no cambia** al habilitar/deshabilitar otras, porque se calcula sobre todas las
-  categorías, no solo las activas.
-- **Días**: todos los días calendario entre `selectedPeriodStartDate` y
-  `selectedPeriodEndDate`. El eje X es el índice de día (0 … n-1). La fecha de un índice se
-  obtiene por calendario, no sumando `Duration(days: n)` (que arrastra el problema del horario
-  de verano): `DateTime(start.year, start.month, start.day + índice)`, que Dart normaliza. La
-  cantidad de días es `dayIndex(start, end) + 1`, con el mismo `UtilsService.dayIndex`.
-- **Series**: una `LineChartBarData` por categoría **activa**, con un `FlSpot(índiceDía, valor)`
-  por cada elemento de su `dailyTotals` (ya trae 0 en los días sin gasto), `color` de la
-  categoría, `dotData` oculto, `isCurved: false`.
+  `Colors.primaries[generator.nextInt(Colors.primaries.length)].shade700`, el mismo algoritmo
+  que la tabla de "Gastos por categoría". El color de una categoría no cambia al
+  habilitar/deshabilitar otras porque se calcula sobre todas.
+- **Meses**: el eje X es el índice de mes (0 … n-1); el mes de un índice es
+  `DateTime(rowsStartMonth.year, rowsStartMonth.month + índice)`. `n` es el largo común de
+  `monthlyTotals`.
+- **Mes en curso**: el último índice, cuando el mes final del período es el mes actual.
+- **Variación de un mes**: para un mes `i > 0` de una categoría,
+  `(monthlyTotals[i] - monthlyTotals[i-1]) / monthlyTotals[i-1] * 100`. Si el mes anterior es
+  `0`, o si `i == 0` (no hay mes anterior dentro del período), **no hay variación** y se muestra
+  `—`. Se formatea con signo y sin decimales (`+25%`, `-10%`, `0%`).
 
-Gráfico (`buildChart`, `SizedBox(height: 300)` + `LineChart`):
+Gráfico (`SizedBox(height: 300)` + `LineChart`):
 
-- **Eje X**: los datos están a nivel día, pero solo se dibuja label en el **primer día de cada
-  mes** del rango (día 1), con formato `MM/yy`. Los demás días no muestran label. Grilla y bordes
-  con el estilo de `expenses_by_day.dart` (`Colors.grey.shade300` / `shade400`).
-- **Eje Y**: `minY = 0`, `maxY` = máximo valor entre las series activas; títulos izquierdos
-  compactos (`k` / `M`) como en `expenses_by_day.dart`. Sin títulos arriba ni a la derecha.
-- **Selección de día (sin tooltip)**: `LineTouchData(handleBuiltInTouches: false)` con un
+- **Series**: por cada categoría **activa**, una línea continua con un `FlSpot(índiceMes,
+  monto)` por mes, de color propio, `isCurved: false`. Para el mes en curso se agrega, por
+  categoría, una **segunda línea punteada** (`dashArray: [5, 5]`) con solo los dos últimos
+  puntos (mes anterior → mes en curso) y la línea continua se corta en el mes anterior; así el
+  último tramo se ve como provisional. Si el período tiene un solo mes no hay tramo (ver
+  "Estados especiales").
+- **Eje X**: una etiqueta `MM/yy` por mes (`DateFormat('MM/yy')`), girada. Para que no se
+  amontone con rangos largos en `Custom`, se dibuja una etiqueta cada
+  `ceil(cantidadDeMeses / 12)` meses, siempre empezando en el primer mes. Grilla y bordes con el
+  estilo de `expenses_by_day.dart` (`Colors.grey.shade300` / `shade400`).
+- **Eje Y**: `minY = 0`, `maxY` = máximo entre las series activas (`1` si es `0`), con un
+  `interval` explícito (`max(1, (maxY / 5).ceil())`) para que no se repitan etiquetas con
+  máximos chicos; títulos izquierdos compactos (`k` / `M`) como en `expenses_by_day.dart`. Sin
+  títulos arriba ni a la derecha.
+- **Selección de mes (sin tooltip)**: `LineTouchData(handleBuiltInTouches: false)` con
   `touchCallback`. Al tocar o arrastrar (`FlTapUpEvent`, `FlPanUpdateEvent`,
-  `FlLongPressMoveUpdate`) sobre el gráfico se toma el `x` del punto más cercano
-  horizontalmente (el `distanceCalculator` por defecto mide solo distancia horizontal, así que
-  no hace falta precisión vertical ni importa que las líneas se crucen) y se guarda en
-  `selectedDayIndex`. El día marcado se dibuja con una línea vertical
-  (`extraLinesData: ExtraLinesData(verticalLines: [VerticalLine(x: selectedDayIndex)])`). No
-  hay puntos resaltados ni tooltip: los montos de ese día se leen en la lista de categorías.
+  `FlLongPressMoveUpdate`) se toma el `x` del punto más cercano horizontalmente y se guarda en
+  `selectedMonthIndex`. El mes marcado se dibuja con una línea vertical
+  (`extraLinesData`). No hay puntos resaltados ni tooltip: los datos del mes se leen en la lista.
 
 Lista de categorías:
 
-- Encima de la lista, una fila con dos acciones de texto (`CupertinoButton` con
-  `padding: EdgeInsets.zero`): **Habilitar todas** (vacía `disabledCategories`) y
-  **Deshabilitar todas** (`disabledCategories` = todas las categorías actuales).
-- Luego una fila por categoría, con el mismo layout que la tabla de "Gastos por categoría"
-  (círculo de color de 20×20 en una columna de 50 + nombre a `fontSize: 18`, negrita).
-- **Sin día seleccionado** las filas no muestran montos. **Con día seleccionado**, encima de la
-  lista aparece un encabezado con la fecha (`dd-MM-yyyy`) y un botón de texto "Quitar
-  selección" (`selectedDayIndex = null`), y cada fila **activa** muestra a la derecha el monto
-  de ese día (`dailyTotals[selectedDayIndex]`) con
-  `utilsService.beautifyCurrency(monto, selectedCurrency)`. Las filas deshabilitadas no
-  muestran monto. El orden de la lista no cambia con la selección.
-- Tocar una fila alterna la categoría entre habilitada y deshabilitada. Las deshabilitadas se
-  muestran con el nombre **tachado** (`TextDecoration.lineThrough`) y el círculo de color
-  atenuado (opacidad reducida); no se dibuja su línea.
+- Encima, una fila con dos acciones de texto (`CupertinoButton`, `padding: EdgeInsets.zero`):
+  **Habilitar todas** y **Deshabilitar todas**.
+- Una fila por categoría: círculo de color de 20×20 en una columna de 50 + nombre a
+  `fontSize: 18`, negrita. Tocar la fila alterna habilitada/deshabilitada; las deshabilitadas
+  muestran el nombre **tachado** y el círculo atenuado, y no se dibujan.
+- **Sin mes seleccionado** las filas no muestran montos. **Con mes seleccionado**, encima de la
+  lista aparece un encabezado con el mes (`MM/yyyy`, agregando ` (en curso)` si es el mes en
+  curso) y un botón "Quitar selección". Cada fila **activa** muestra a la derecha el monto de
+  ese mes (`beautifyCurrency(monto, selectedCurrency)`) y, al lado, la variación porcentual
+  contra el mes anterior (`+25%`), coloreada: **rojo** (`Colors.red.shade900`) si el gasto
+  subió, **verde** (`Colors.green.shade900`) si bajó, neutro si es `0%` o `—`. Las filas
+  deshabilitadas no muestran monto ni variación. El orden de la lista no cambia con la
+  selección.
 
 Estados especiales:
 
 - `rows == null` → `Loader`.
-- `rows` vacío → `No hay datos` (mismo estilo que los otros gráficos); el selector de moneda y
-  el de período siguen visibles.
-- Todas las categorías deshabilitadas → se oculta el gráfico y en su lugar se muestra el texto
+- `rows` vacío → `No hay datos` (los selectores siguen visibles).
+- Todas las categorías deshabilitadas → se oculta el gráfico y se muestra
   `No hay categorías seleccionadas`; la lista y los botones siguen visibles.
+- **Un solo mes** en el período (por ejemplo un `Custom` dentro de un mismo mes): cada línea
+  tiene un único punto, que no se dibuja sin marcador; en ese caso se muestran los puntos
+  (`FlDotData(show: true)`) y no se agrega línea punteada. La variación es `—`.
 
 Persistencia de la selección:
 
 - `disabledCategories` se conserva al cambiar moneda, período o cuenta (las categorías que ya no
-  aparecen en los datos simplemente se ignoran). Se descarta al salir del gráfico (el widget se
-  destruye al cambiar de tipo de gráfico). Cambiar de cuenta no reconstruye el widget (el tipo
-  de gráfico no cambia, Flutter conserva el `State` y llama a `didUpdateWidget`), por eso el
-  período y la selección sobreviven; lo único que se reinicia por la cuenta es la moneda.
-- Por defecto, todas las categorías arrancan activas, sin importar cuántas sean; el usuario es
-  responsable de seleccionar las que quiere ver.
+  aparecen en los datos se ignoran) y se descarta al salir del gráfico. Cambiar de cuenta no
+  reconstruye el widget (Flutter conserva el `State` y llama a `didUpdateWidget`); lo único que
+  se reinicia por la cuenta es la moneda.
+- Todas las categorías arrancan activas, sin importar cuántas sean.
 
-Convenciones de código: orden de miembros, `buildX`, `getX`, guard `mounted` tras `await`,
-`await databaseService.initialized`, y try/catch con `logger.e` en el fetch, según
-[coding-style.md](../../coding-style.md). Si el archivo supera ~500 líneas se evalúa extraer
-la lista de categorías a un widget propio.
+Convenciones de código: según [coding-style.md](../../coding-style.md) — orden de miembros,
+métodos cortos (un `buildX` por hijo), constantes con nombre, sin comentarios, guard `mounted`
+tras `await`, `await databaseService.initialized` y `try`/`catch` con `logger.e` en el fetch.
 
-### 3. `statistics.dart`
+### 4. `statistics.dart`
 
-- `buildChartTypeSelector`: agregar `'Gastos por categoría históricos'` a `options`.
-- `buildChart`: nueva rama que devuelve `HistoricalExpensesByCategoryChart(account: account)`.
+Sin cambios: la opción `Gastos por categoría históricos` ya existe.
 
-### 4. Documentación
+### 5. Documentación
 
-Por la regla de docs-in-sync, en [docs/features/statistics.md](../../features/statistics.md):
+Por la regla de docs-in-sync:
 
-- "What it does": pasar de "Two chart views" a tres y describir el nuevo gráfico.
-- "Key repository methods": agregar `getExpensesByCategoryByDay`.
-- "Views involved": agregar `historical_expenses_by_category.dart`.
-- "Edge cases": opciones de período del nuevo gráfico, agrupación diaria con labels mensuales,
-  colores estables, selección persistente dentro del gráfico.
+- [features/statistics.md](../../features/statistics.md): describir el gráfico como mensual;
+  reemplazar `getExpensesByCategoryByDay` por `getExpensesByCategoryByMonth`; reemplazar las
+  entradas de "Edge cases" de granularidad diaria por las mensuales (período en meses
+  calendario, mes en curso incluido y parcial, variación porcentual y sus casos `—`, etiquetas
+  del eje X); actualizar los rangos de líneas citados del repositorio.
+- [data-layer.md](../../data-layer.md): la clase de referencia pasa a ser
+  `CategoryMonthlyExpenses` (con `monthlyTotals`).
 
 ## Criterios de aceptación
 
 1. El selector de tipo de gráfico incluye `Gastos por categoría históricos`.
 2. La vista muestra, en orden: selector de moneda, selector de período, gráfico, botones
    habilitar/deshabilitar todas, lista de categorías.
-3. El período ofrece `3 meses`, `6 meses`, `1 año`, `Custom`; `Custom` abre
-   `DateRangeSelectorDialog` y cancelar no altera la selección.
-4. Hay una línea por categoría activa, con el color de su fila en la lista; todas arrancan
-   activas.
-5. Los datos del gráfico son diarios (0 en días sin gasto) y el eje X solo muestra labels en el
-   primer día de cada mes.
-6. Tocar o arrastrar sobre el gráfico marca una línea vertical en el día más cercano y la
-   lista muestra el monto de ese día por categoría activa; "Quitar selección" la limpia.
-7. Los montos se convierten a la moneda elegida con la tasa vigente en la fecha de cada
+3. El período ofrece `3 meses`, `6 meses`, `1 año`, `Custom`. `3 meses` muestra el mes actual y
+   los 2 anteriores (3 puntos por línea), `6 meses` 6 puntos y `1 año` 12. `Custom` abre
+   `DateRangeSelectorDialog`, cancelar no altera la selección y el rango se ajusta a los meses
+   completos que toca.
+4. Hay una línea por categoría activa, con el color de su fila; todas arrancan activas.
+5. Los datos son mensuales (0 en meses sin gasto) y el eje X muestra una etiqueta `MM/yy` por
+   mes (una cada `ceil(meses / 12)` meses si son más de 12).
+6. El mes en curso está incluido; su último tramo se dibuja punteado y en el encabezado de la
+   selección aparece `(en curso)`.
+7. Tocar o arrastrar sobre el gráfico marca una línea vertical en el mes más cercano y la lista
+   muestra, por categoría activa, el monto de ese mes y la variación porcentual contra el mes
+   anterior (`+25%`, rojo si subió, verde si bajó, `—` si no hay mes anterior o este es `0`);
+   "Quitar selección" la limpia.
+8. Los montos se convierten a la moneda elegida con la tasa vigente en la fecha de cada
    movimiento.
-8. Tocar una categoría la habilita/deshabilita; las deshabilitadas se ven tachadas y no se
-   dibujan.
-9. "Habilitar todas" y "Deshabilitar todas" actúan sobre todas las categorías de la lista.
-10. Cambiar moneda, período o cuenta recalcula el gráfico sin perder la selección de categorías.
-   Cambiar la cuenta además reinicia la moneda a la de la cuenta (USD si es "Todas").
-11. Sin datos se muestra `No hay datos`; con todas deshabilitadas, `No hay categorías
-    seleccionadas`.
-12. `flutter analyze` sin errores nuevos.
+9. Un movimiento del último día del mes (por ejemplo a las 23:30) cuenta en ese mes.
+10. Tocar una categoría la habilita/deshabilita; las deshabilitadas se ven tachadas y no se
+    dibujan. "Habilitar todas" y "Deshabilitar todas" actúan sobre todas las categorías.
+11. Cambiar moneda, período o cuenta recalcula el gráfico sin perder la selección de categorías;
+    cambiar la cuenta además reinicia la moneda a la de la cuenta (USD si es "Todas").
+12. Sin datos se muestra `No hay datos`; con todas deshabilitadas, `No hay categorías
+    seleccionadas`; con un solo mes, los puntos se ven.
+13. `flutter analyze` sin errores nuevos.

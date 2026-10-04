@@ -8,13 +8,13 @@ import 'package:money/services/database.service.dart';
 import 'package:money/services/utils.service.dart';
 import 'package:sqflite/sqflite.dart';
 
-class CategoryDailyExpenses {
+class CategoryMonthlyExpenses {
   final String category;
-  final List<double> dailyTotals;
+  final List<double> monthlyTotals;
 
-  const CategoryDailyExpenses({ required this.category, required this.dailyTotals });
+  const CategoryMonthlyExpenses({ required this.category, required this.monthlyTotals });
 
-  double get total => dailyTotals.fold<double>(0, (sum, value) => sum + value);
+  double get total => monthlyTotals.fold<double>(0, (sum, value) => sum + value);
 }
 
 class MovementsRepository extends BaseRepository<Movement> {
@@ -249,7 +249,7 @@ class MovementsRepository extends BaseRepository<Movement> {
     }).entries.map((entry) => {'date': entry.key, 'total': entry.value}).toList();
   }
 
-  Future<List<CategoryDailyExpenses>> getExpensesByCategoryByDay(Account? account, DateTime startDate, DateTime endDate, Currency displayCurrency) async {
+  Future<List<CategoryMonthlyExpenses>> getExpensesByCategoryByMonth(Account? account, DateTime startDate, DateTime endDate, Currency displayCurrency) async {
     var where = 'type = ? AND creationDate >= ? AND creationDate < ?';
     List<Object?> whereArgs = [
       MovementType.REMOVE.name,
@@ -270,6 +270,6 @@ class MovementsRepository extends BaseRepository<Movement> {
       var dailyTotals = dailyTotalsByCategory.putIfAbsent(movement.category, () => List<double>.filled(dayCount, 0));
       dailyTotals[utilsService.dayIndex(startDate, creationDate)] += amount;
     }
-    return dailyTotalsByCategory.entries.map((entry) => CategoryDailyExpenses(category: entry.key, dailyTotals: entry.value)).toList();
+    return dailyTotalsByCategory.entries.map((entry) => CategoryMonthlyExpenses(category: entry.key, monthlyTotals: entry.value)).toList();
   }
 }
