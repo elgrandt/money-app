@@ -25,12 +25,12 @@ class HistoricalExpensesByCategoryChart extends StatefulWidget {
 
 class _HistoricalExpensesByCategoryChartState extends State<HistoricalExpensesByCategoryChart> {
   List<CategoryMonthlyExpenses>? rows;
-  DateTime? rowsStartDate;
+  DateTime? rowsStartMonth;
   late Currency selectedCurrency;
   String selectedPeriod = '3-months';
   DateTimeRange? customRange;
   Set<String> disabledCategories = {};
-  int? selectedDayIndex;
+  int? selectedMonthIndex;
   int lastRequestId = 0;
   var databaseService = GetIt.instance.get<DatabaseService>();
   var utilsService = GetIt.instance.get<UtilsService>();
@@ -38,10 +38,13 @@ class _HistoricalExpensesByCategoryChartState extends State<HistoricalExpensesBy
   final colorSeed = 134;
   final periodOptions = ['3-months', '6-months', '1-year', 'custom'];
   final periodOptionNames = ['3 meses', '6 meses', '1 año', 'Custom'];
+  final maxAxisLabels = 12;
+  final axisIntervalCount = 5;
+  final provisionalDashArray = [5, 5];
   final sectionSpacing = 15.0;
   final chartHeight = 300.0;
   final lineWidth = 2.0;
-  final selectedDayLineWidth = 1.5;
+  final selectedMonthLineWidth = 1.5;
   final touchSpotThreshold = 1000.0;
   final axisTitleSize = 50.0;
   final hiddenTitles = const AxisTitles(sideTitles: SideTitles(showTitles: false));
@@ -49,28 +52,40 @@ class _HistoricalExpensesByCategoryChartState extends State<HistoricalExpensesBy
   final categoryIconColumnWidth = 50.0;
   final categoryIconSize = 20.0;
   final disabledIconOpacity = 0.3;
+  final variationSpacing = 8.0;
   final categoryTextStyle = const TextStyle(fontSize: 18, fontWeight: FontWeight.bold);
 
-  DateTime get selectedPeriodStartDate {
+  DateTime get currentMonth {
     var now = DateTime.now();
-    if (selectedPeriod == '3-months') return DateTime(now.year, now.month - 3, now.day);
-    if (selectedPeriod == '6-months') return DateTime(now.year, now.month - 6, now.day);
-    if (selectedPeriod == '1-year') return DateTime(now.year - 1, now.month, now.day);
-    return customRange!.start;
+    return DateTime(now.year, now.month);
   }
 
-  DateTime get selectedPeriodEndDate {
-    var now = DateTime.now();
-    if (selectedPeriod == 'custom') return customRange!.end;
-    return DateTime(now.year, now.month, now.day, 23, 59, 59);
+  DateTime get selectedPeriodStartMonth {
+    if (selectedPeriod == '3-months') return DateTime(currentMonth.year, currentMonth.month - 2);
+    if (selectedPeriod == '6-months') return DateTime(currentMonth.year, currentMonth.month - 5);
+    if (selectedPeriod == '1-year') return DateTime(currentMonth.year, currentMonth.month - 11);
+    return DateTime(customRange!.start.year, customRange!.start.month);
   }
 
-  int get dayCount {
+  DateTime get selectedPeriodEndMonth {
+    if (selectedPeriod == 'custom') return DateTime(customRange!.end.year, customRange!.end.month);
+    return currentMonth;
+  }
+
+  int get monthCount {
     return rows!.first.monthlyTotals.length;
   }
 
-  bool get isSingleDay {
-    return dayCount == 1;
+  bool get includesCurrentMonth {
+    return utilsService.monthIndex(rowsStartMonth!, currentMonth) == monthCount - 1;
+  }
+
+  bool get hasProvisionalSegment {
+    return includesCurrentMonth && monthCount >= 2;
+  }
+
+  int get labelStep {
+    return (monthCount / maxAxisLabels).ceil();
   }
 
   List<CategoryMonthlyExpenses> get sortedRows {
@@ -98,15 +113,25 @@ class _HistoricalExpensesByCategoryChartState extends State<HistoricalExpensesBy
     return maxValue == 0 ? 1 : maxValue;
   }
 
+  double get chartInterval {
+    return max(1, (chartMaxY / axisIntervalCount).ceil()).toDouble();
+  }
+
+  String get selectedMonthTitle {
+    var title = DateFormat('MM/yyyy').format(monthAt(selectedMonthIndex!));
+    var isCurrent = includesCurrentMonth && selectedMonthIndex == monthCount - 1;
+    return isCurrent ? '$title (en curso)' : title;
+  }
+
   LineChartData get chartData {
     return LineChartData(
       minX: 0,
-      maxX: max(1, dayCount - 1).toDouble(),
+      maxX: max(1, monthCount - 1).toDouble(),
       minY: 0,
       maxY: chartMaxY,
-      lineBarsData: activeRows.map(toLineBar).toList(),
+      lineBarsData: activeRows.expand(toLineBars).toList(),
       lineTouchData: touchData,
-      extraLinesData: selectedDayLines,
+      extraLinesData: selectedMonthLines,
       gridData: gridData,
       borderData: borderData,
       titlesData: titlesData,
@@ -121,11 +146,11 @@ class _HistoricalExpensesByCategoryChartState extends State<HistoricalExpensesBy
     );
   }
 
-  ExtraLinesData get selectedDayLines {
+  ExtraLinesData get selectedMonthLines {
     return ExtraLinesData(
       verticalLines: [
-        if (selectedDayIndex != null)
-          VerticalLine(x: selectedDayIndex!.toDouble(), color: Colors.grey.shade700, strokeWidth: selectedDayLineWidth),
+        if (selectedMonthIndex != null)
+          VerticalLine(x: selectedMonthIndex!.toDouble(), color: Colors.grey.shade700, strokeWidth: selectedMonthLineWidth),
       ],
     );
   }
@@ -133,6 +158,7 @@ class _HistoricalExpensesByCategoryChartState extends State<HistoricalExpensesBy
   FlGridData get gridData {
     return FlGridData(
       drawVerticalLine: false,
+      horizontalInterval: chartInterval,
       getDrawingHorizontalLine: (value) => FlLine(color: Colors.grey.shade300, strokeWidth: 1),
     );
   }
@@ -170,6 +196,7 @@ class _HistoricalExpensesByCategoryChartState extends State<HistoricalExpensesBy
     return AxisTitles(
       sideTitles: SideTitles(
         showTitles: true,
+        interval: chartInterval,
         reservedSize: axisTitleSize,
         getTitlesWidget: buildLeftTitle,
       ),
@@ -196,8 +223,26 @@ class _HistoricalExpensesByCategoryChartState extends State<HistoricalExpensesBy
     return disabledCategories.contains(category);
   }
 
-  DateTime dateAt(int dayIndex) {
-    return DateTime(rowsStartDate!.year, rowsStartDate!.month, rowsStartDate!.day + dayIndex);
+  DateTime monthAt(int monthIndex) {
+    return DateTime(rowsStartMonth!.year, rowsStartMonth!.month + monthIndex);
+  }
+
+  double? variationPercent(CategoryMonthlyExpenses row, int monthIndex) {
+    if (monthIndex == 0) return null;
+    var previous = row.monthlyTotals[monthIndex - 1];
+    if (previous == 0) return null;
+    return (row.monthlyTotals[monthIndex] - previous) / previous * 100;
+  }
+
+  String formatVariation(double? percent) {
+    if (percent == null) return '—';
+    var rounded = percent.round();
+    return '${ rounded > 0 ? '+' : '' }$rounded%';
+  }
+
+  Color variationColor(double? percent) {
+    if (percent == null || percent.round() == 0) return Colors.grey.shade700;
+    return percent > 0 ? Colors.red.shade900 : Colors.green.shade900;
   }
 
   String compactAmount(double value) {
@@ -206,28 +251,37 @@ class _HistoricalExpensesByCategoryChartState extends State<HistoricalExpensesBy
     return value.toStringAsFixed(0);
   }
 
-  LineChartBarData toLineBar(CategoryMonthlyExpenses row) {
+  List<LineChartBarData> toLineBars(CategoryMonthlyExpenses row) {
+    if (!hasProvisionalSegment) return [toLineBar(row, 0, monthCount)];
+    return [
+      toLineBar(row, 0, monthCount - 1),
+      toLineBar(row, monthCount - 2, monthCount, dashArray: provisionalDashArray),
+    ];
+  }
+
+  LineChartBarData toLineBar(CategoryMonthlyExpenses row, int fromMonth, int toMonth, { List<int>? dashArray }) {
     return LineChartBarData(
-      spots: [for (var i = 0; i < row.monthlyTotals.length; i++) FlSpot(i.toDouble(), row.monthlyTotals[i])],
+      spots: [for (var i = fromMonth; i < toMonth; i++) FlSpot(i.toDouble(), row.monthlyTotals[i])],
       color: categoryColors[row.category],
       barWidth: lineWidth,
-      dotData: FlDotData(show: isSingleDay),
+      dashArray: dashArray,
+      dotData: const FlDotData(show: true),
     );
   }
 
   Future<void> getRows() async {
     var requestId = ++lastRequestId;
-    var startDate = selectedPeriodStartDate;
-    var endDate = selectedPeriodEndDate;
+    var startMonth = selectedPeriodStartMonth;
+    var endMonth = selectedPeriodEndMonth;
     await databaseService.initialized;
     try {
       logger.d('Getting historical expenses by category');
-      var result = await databaseService.movementsRepository.getExpensesByCategoryByMonth(widget.account, startDate, endDate, selectedCurrency);
+      var result = await databaseService.movementsRepository.getExpensesByCategoryByMonth(widget.account, startMonth, endMonth, selectedCurrency);
       if (!mounted || requestId != lastRequestId) return;
       setState(() {
         rows = result;
-        rowsStartDate = startDate;
-        selectedDayIndex = null;
+        rowsStartMonth = startMonth;
+        selectedMonthIndex = null;
       });
     } catch (error, stackTrace) {
       logger.e('Error getting historical expenses by category', error: error, stackTrace: stackTrace);
@@ -289,9 +343,9 @@ class _HistoricalExpensesByCategoryChartState extends State<HistoricalExpensesBy
     });
   }
 
-  void clearSelectedDay() {
+  void clearSelectedMonth() {
     setState(() {
-      selectedDayIndex = null;
+      selectedMonthIndex = null;
     });
   }
 
@@ -300,7 +354,7 @@ class _HistoricalExpensesByCategoryChartState extends State<HistoricalExpensesBy
     var spots = response?.lineBarSpots;
     if (!isSelectionEvent || spots == null || spots.isEmpty) return;
     setState(() {
-      selectedDayIndex = spots.first.x.toInt();
+      selectedMonthIndex = spots.first.x.toInt();
     });
   }
 
@@ -337,7 +391,7 @@ class _HistoricalExpensesByCategoryChartState extends State<HistoricalExpensesBy
       if (activeRows.isEmpty) buildNoSelectionMessage(context) else buildChart(context),
       SizedBox(height: sectionSpacing),
       buildCategoryActions(context),
-      if (selectedDayIndex != null) buildSelectedDayHeader(context),
+      if (selectedMonthIndex != null) buildSelectedMonthHeader(context),
       buildCategoryList(context),
     ];
   }
@@ -352,18 +406,16 @@ class _HistoricalExpensesByCategoryChartState extends State<HistoricalExpensesBy
   Widget buildChart(BuildContext context) {
     return SizedBox(
       height: chartHeight,
-      child: LineChart(chartData),
+      child: LineChart(chartData, duration: Duration.zero),
     );
   }
 
   Widget buildBottomTitle(double value, TitleMeta meta) {
-    if (value != value.toInt() || value >= dayCount) return const SizedBox();
-    var date = dateAt(value.toInt());
-    if (date.day != 1) return const SizedBox();
+    if (value != value.toInt() || value >= monthCount || value.toInt() % labelStep != 0) return const SizedBox();
     return SideTitleWidget(
       axisSide: meta.axisSide,
       angle: -pi / 2,
-      child: Text(DateFormat('MM/yy').format(date), style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold)),
+      child: Text(DateFormat('MM/yy').format(monthAt(value.toInt())), style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold)),
     );
   }
 
@@ -384,20 +436,20 @@ class _HistoricalExpensesByCategoryChartState extends State<HistoricalExpensesBy
     );
   }
 
-  Widget buildSelectedDayHeader(BuildContext context) {
+  Widget buildSelectedMonthHeader(BuildContext context) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        buildSelectedDayDate(context),
-        CupertinoButton(padding: EdgeInsets.zero, onPressed: clearSelectedDay, child: const Text('Quitar selección')),
+        buildSelectedMonthTitle(context),
+        CupertinoButton(padding: EdgeInsets.zero, onPressed: clearSelectedMonth, child: const Text('Quitar selección')),
       ],
     );
   }
 
-  Widget buildSelectedDayDate(BuildContext context) {
+  Widget buildSelectedMonthTitle(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.only(left: 10),
-      child: Text(DateFormat('dd-MM-yyyy').format(dateAt(selectedDayIndex!)), style: categoryTextStyle),
+      child: Text(selectedMonthTitle, style: categoryTextStyle),
     );
   }
 
@@ -418,7 +470,7 @@ class _HistoricalExpensesByCategoryChartState extends State<HistoricalExpensesBy
           children: [
             buildCategoryIcon(context, category),
             buildCategoryName(context, category),
-            if (selectedDayIndex != null && !isDisabled(category)) buildCategoryDayAmount(context, row),
+            if (selectedMonthIndex != null && !isDisabled(category)) buildCategoryMonthDetails(context, row),
           ],
         ),
       ),
@@ -451,11 +503,19 @@ class _HistoricalExpensesByCategoryChartState extends State<HistoricalExpensesBy
     );
   }
 
-  Widget buildCategoryDayAmount(BuildContext context, CategoryMonthlyExpenses row) {
-    var amount = row.monthlyTotals[selectedDayIndex!];
+  Widget buildCategoryMonthDetails(BuildContext context, CategoryMonthlyExpenses row) {
+    var amount = row.monthlyTotals[selectedMonthIndex!];
+    var percent = variationPercent(row, selectedMonthIndex!);
     return Padding(
       padding: const EdgeInsets.only(right: 10),
-      child: Text(utilsService.beautifyCurrency(amount, selectedCurrency), style: categoryTextStyle),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(utilsService.beautifyCurrency(amount, selectedCurrency), style: categoryTextStyle),
+          SizedBox(width: variationSpacing),
+          Text(formatVariation(percent), style: categoryTextStyle.copyWith(color: variationColor(percent))),
+        ],
+      ),
     );
   }
 }
