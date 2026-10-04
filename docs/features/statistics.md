@@ -93,8 +93,9 @@ por arriba.
 - **Historical chart Y axis** — thousands are shown with one decimal (`1.5k`), so the explicit
   tick interval never produces repeated labels.
 - **Historical chart variation** — `(month − previous) / previous × 100`, rounded, with sign
-  (`+25%`); red when it rose, green when it fell, grey for `0%`. It is `—` for the first month of
-  the period and whenever the previous month is 0.
+  (`+25%`); red when it rose, green when it fell. It is shown to the left of the amount, in a
+  smaller font, and left empty (no text) for the first month of the period, whenever the previous
+  month is 0, and when it rounds to `0%`.
 - **Historical chart colors and selection** — colors use `Random(134)` over categories sorted by
   period total (same algorithm as the category table) and do not change when categories are
   toggled. `disabledCategories` and the period survive currency/period/account changes; changing

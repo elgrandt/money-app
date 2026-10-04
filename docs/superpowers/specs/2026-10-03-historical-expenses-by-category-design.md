@@ -170,8 +170,9 @@ Cálculos derivados (getters, no se guardan):
 - **Mes en curso**: el último índice, cuando el mes final del período es el mes actual.
 - **Variación de un mes**: para un mes `i > 0` de una categoría,
   `(monthlyTotals[i] - monthlyTotals[i-1]) / monthlyTotals[i-1] * 100`. Si el mes anterior es
-  `0`, o si `i == 0` (no hay mes anterior dentro del período), **no hay variación** y se muestra
-  `—`. Se formatea con signo y sin decimales (`+25%`, `-10%`, `0%`).
+  `0`, o si `i == 0` (no hay mes anterior dentro del período), **no hay variación** y no se
+  muestra nada. Tampoco se muestra si el valor redondeado es `0%` (el gasto no cambió). Se
+  formatea con signo y sin decimales (`+25%`, `-10%`).
 
 Gráfico (`SizedBox(height: 300)` + `LineChart`):
 
@@ -205,9 +206,10 @@ Lista de categorías:
 - **Sin mes seleccionado** las filas no muestran montos. **Con mes seleccionado**, encima de la
   lista aparece un encabezado con el mes (`MM/yyyy`, agregando ` (en curso)` si es el mes en
   curso) y un botón "Quitar selección". Cada fila **activa** muestra a la derecha el monto de
-  ese mes (`beautifyCurrency(monto, selectedCurrency)`) y, al lado, la variación porcentual
-  contra el mes anterior (`+25%`), coloreada: **rojo** (`Colors.red.shade900`) si el gasto
-  subió, **verde** (`Colors.green.shade900`) si bajó, neutro si es `0%` o `—`. Las filas
+  ese mes (`beautifyCurrency(monto, selectedCurrency)`) y, **a la izquierda del monto y con una
+  fuente más chica**, la variación porcentual contra el mes anterior (`+25%`), coloreada:
+  **rojo** (`Colors.red.shade900`) si el gasto subió, **verde** (`Colors.green.shade900`) si
+  bajó. Si no hay variación (primer mes, mes anterior en `0` o `0%`) no se muestra nada. Las filas
   deshabilitadas no muestran monto ni variación. El orden de la lista no cambia con la
   selección.
 
@@ -219,7 +221,7 @@ Estados especiales:
   `No hay categorías seleccionadas`; la lista y los botones siguen visibles.
 - **Un solo mes** en el período (por ejemplo un `Custom` dentro de un mismo mes): cada línea
   tiene un único punto, que no se dibuja sin marcador; en ese caso se muestran los puntos
-  (`FlDotData(show: true)`) y no se agrega línea punteada. La variación es `—`.
+  (`FlDotData(show: true)`) y no se agrega línea punteada. No hay variación.
 
 Persistencia de la selección:
 
@@ -244,7 +246,7 @@ Por la regla de docs-in-sync:
 - [features/statistics.md](../../features/statistics.md): describir el gráfico como mensual;
   reemplazar `getExpensesByCategoryByDay` por `getExpensesByCategoryByMonth`; reemplazar las
   entradas de "Edge cases" de granularidad diaria por las mensuales (período en meses
-  calendario, mes en curso incluido y parcial, variación porcentual y sus casos `—`, etiquetas
+  calendario, mes en curso incluido y parcial, variación porcentual y los casos en que no se muestra, etiquetas
   del eje X); actualizar los rangos de líneas citados del repositorio.
 - [data-layer.md](../../data-layer.md): la clase de referencia pasa a ser
   `CategoryMonthlyExpenses` (con `monthlyTotals`).
@@ -265,7 +267,8 @@ Por la regla de docs-in-sync:
    selección aparece `(en curso)`.
 7. Tocar o arrastrar sobre el gráfico marca una línea vertical en el mes más cercano y la lista
    muestra, por categoría activa, el monto de ese mes y la variación porcentual contra el mes
-   anterior (`+25%`, rojo si subió, verde si bajó, `—` si no hay mes anterior o este es `0`);
+   anterior, a la izquierda del monto y más chica (`+25%`, rojo si subió, verde si bajó; sin texto
+   si no hay mes anterior, si este es `0` o si no cambió);
    "Quitar selección" la limpia.
 8. Los montos se convierten a la moneda elegida con la tasa vigente en la fecha de cada
    movimiento.

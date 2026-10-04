@@ -54,6 +54,7 @@ class _HistoricalExpensesByCategoryChartState extends State<HistoricalExpensesBy
   final categoryIconSize = 20.0;
   final disabledIconOpacity = 0.3;
   final variationSpacing = 8.0;
+  final variationTextStyle = const TextStyle(fontSize: 13, fontWeight: FontWeight.bold);
   final categoryTextStyle = const TextStyle(fontSize: 18, fontWeight: FontWeight.bold);
 
   DateTime get currentMonth {
@@ -235,14 +236,16 @@ class _HistoricalExpensesByCategoryChartState extends State<HistoricalExpensesBy
     return (row.monthlyTotals[monthIndex] - previous) / previous * 100;
   }
 
-  String formatVariation(double? percent) {
-    if (percent == null) return '—';
+  bool hasVariation(double? percent) {
+    return percent != null && percent.round() != 0;
+  }
+
+  String formatVariation(double percent) {
     var rounded = percent.round();
     return '${ rounded > 0 ? '+' : '' }$rounded%';
   }
 
-  Color variationColor(double? percent) {
-    if (percent == null || percent.round() == 0) return Colors.grey.shade700;
+  Color variationColor(double percent) {
     return percent > 0 ? Colors.red.shade900 : Colors.green.shade900;
   }
 
@@ -511,12 +514,20 @@ class _HistoricalExpensesByCategoryChartState extends State<HistoricalExpensesBy
       padding: const EdgeInsets.only(right: 10),
       child: Row(
         mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.baseline,
+        textBaseline: TextBaseline.alphabetic,
         children: [
+          if (hasVariation(percent)) buildCategoryVariation(context, percent!),
           Text(utilsService.beautifyCurrency(amount, selectedCurrency), style: categoryTextStyle),
-          SizedBox(width: variationSpacing),
-          Text(formatVariation(percent), style: categoryTextStyle.copyWith(color: variationColor(percent))),
         ],
       ),
+    );
+  }
+
+  Widget buildCategoryVariation(BuildContext context, double percent) {
+    return Padding(
+      padding: EdgeInsets.only(right: variationSpacing),
+      child: Text(formatVariation(percent), style: variationTextStyle.copyWith(color: variationColor(percent))),
     );
   }
 }
