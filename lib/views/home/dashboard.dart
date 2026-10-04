@@ -9,6 +9,7 @@ import 'package:money/views/home/total_viewer.dart';
 import 'package:money/views/statistics/all_expenses.dart';
 import 'package:money/views/statistics/expenses_by_category.dart';
 import 'package:money/views/statistics/expenses_by_day.dart';
+import 'package:money/views/statistics/historical_expenses_by_category.dart';
 
 class Dashboard extends StatelessWidget {
   final List<Account> accounts;
@@ -36,6 +37,10 @@ class Dashboard extends StatelessWidget {
           const Divider(),
           const SizedBox(height: 15),
           buildExchangeRates(context),
+          const SizedBox(height: 15),
+          const Divider(),
+          const SizedBox(height: 15),
+          buildHistoricalExpensesByCategoryChart(context),
           const SizedBox(height: 15),
           const Divider(),
           const SizedBox(height: 15),
@@ -89,6 +94,17 @@ class Dashboard extends StatelessWidget {
         Text('Tasas de cambio', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold), textAlign: TextAlign.center),
         SizedBox(height: 20),
         ExchangeRatesTable(),
+      ],
+    );
+  }
+
+  Widget buildHistoricalExpensesByCategoryChart(BuildContext context) {
+    return const Column(
+      key: Key('historical-expenses-by-category'),
+      children: [
+        Text('Gastos por categoría históricos', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold), textAlign: TextAlign.center),
+        SizedBox(height: 20),
+        HistoricalExpensesByCategoryChart(),
       ],
     );
   }

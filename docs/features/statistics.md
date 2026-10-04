@@ -55,7 +55,8 @@ por arriba.
 - [all_expenses.dart](../../lib/views/statistics/all_expenses.dart) — the dashboard's "latest
   movements" section (a filtered `MovementsList`).
 - [dashboard.dart](../../lib/views/home/dashboard.dart) — composes total, totals pie, latest
-  movements, both charts, and the "Tasas de cambio" table (between the category and day charts).
+  movements, the category chart, the "Tasas de cambio" table, the historical expenses by category
+  chart (between the rates table and the day chart), and the day chart.
 - Charts render through the generic
   [easy_pie_chart.dart](../../lib/views/generics/easy_pie_chart.dart).
 
