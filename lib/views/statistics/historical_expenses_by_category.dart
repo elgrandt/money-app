@@ -47,6 +47,7 @@ class _HistoricalExpensesByCategoryChartState extends State<HistoricalExpensesBy
   final selectedMonthLineWidth = 1.5;
   final touchSpotThreshold = 1000.0;
   final axisTitleSize = 50.0;
+  final axisLabelAngle = -pi / 4;
   final hiddenTitles = const AxisTitles(sideTitles: SideTitles(showTitles: false));
   final categoryRowPadding = 6.0;
   final categoryIconColumnWidth = 50.0;
@@ -414,7 +415,7 @@ class _HistoricalExpensesByCategoryChartState extends State<HistoricalExpensesBy
     if (value != value.toInt() || value >= monthCount || value.toInt() % labelStep != 0) return const SizedBox();
     return SideTitleWidget(
       axisSide: meta.axisSide,
-      angle: -pi / 2,
+      angle: axisLabelAngle,
       child: Text(DateFormat('MM/yy').format(monthAt(value.toInt())), style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold)),
     );
   }
