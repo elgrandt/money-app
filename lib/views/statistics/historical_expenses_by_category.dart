@@ -27,17 +27,17 @@ class _HistoricalExpensesByCategoryChartState extends State<HistoricalExpensesBy
   List<CategoryMonthlyExpenses>? rows;
   DateTime? rowsStartMonth;
   late Currency selectedCurrency;
-  String selectedPeriod = '3-months';
+  String selectedPeriod = '6-months';
   DateTimeRange? customRange;
   Set<String> disabledCategories = {};
-  int? selectedMonthIndex;
+  late int selectedMonthIndex;
   int lastRequestId = 0;
   var databaseService = GetIt.instance.get<DatabaseService>();
   var utilsService = GetIt.instance.get<UtilsService>();
   var logger = GetIt.instance.get<Logger>();
   final colorSeed = 134;
-  final periodOptions = ['3-months', '6-months', '1-year', 'custom'];
-  final periodOptionNames = ['3 meses', '6 meses', '1 año', 'Custom'];
+  final periodOptions = ['6-months', '1-year', 'custom'];
+  final periodOptionNames = ['6 meses', '1 año', 'Custom'];
   final maxAxisLabels = 12;
   final axisIntervalCount = 5;
   final provisionalDashArray = [5, 5];
@@ -63,7 +63,6 @@ class _HistoricalExpensesByCategoryChartState extends State<HistoricalExpensesBy
   }
 
   DateTime get selectedPeriodStartMonth {
-    if (selectedPeriod == '3-months') return DateTime(currentMonth.year, currentMonth.month - 2);
     if (selectedPeriod == '6-months') return DateTime(currentMonth.year, currentMonth.month - 5);
     if (selectedPeriod == '1-year') return DateTime(currentMonth.year, currentMonth.month - 11);
     return DateTime(customRange!.start.year, customRange!.start.month);
@@ -90,9 +89,18 @@ class _HistoricalExpensesByCategoryChartState extends State<HistoricalExpensesBy
     return (monthCount / maxAxisLabels).ceil();
   }
 
-  List<CategoryMonthlyExpenses> get sortedRows {
+  List<CategoryMonthlyExpenses> get rowsByPeriodTotal {
     var sorted = [...rows!];
     sorted.sort((a, b) => b.total.compareTo(a.total));
+    return sorted;
+  }
+
+  List<CategoryMonthlyExpenses> get sortedRows {
+    var sorted = [...rows!];
+    sorted.sort((a, b) {
+      var byMonth = b.monthlyTotals[selectedMonthIndex].compareTo(a.monthlyTotals[selectedMonthIndex]);
+      return byMonth != 0 ? byMonth : b.total.compareTo(a.total);
+    });
     return sorted;
   }
 
@@ -103,7 +111,7 @@ class _HistoricalExpensesByCategoryChartState extends State<HistoricalExpensesBy
   Map<String, Color> get categoryColors {
     var generator = Random(colorSeed);
     return {
-      for (var row in sortedRows)
+      for (var row in rowsByPeriodTotal)
         row.category: Colors.primaries[generator.nextInt(Colors.primaries.length)].shade700,
     };
   }
@@ -120,7 +128,7 @@ class _HistoricalExpensesByCategoryChartState extends State<HistoricalExpensesBy
   }
 
   String get selectedMonthTitle {
-    var title = DateFormat('MM/yyyy').format(monthAt(selectedMonthIndex!));
+    var title = DateFormat('MM/yyyy').format(monthAt(selectedMonthIndex));
     var isCurrent = includesCurrentMonth && selectedMonthIndex == monthCount - 1;
     return isCurrent ? '$title (en curso)' : title;
   }
@@ -151,8 +159,7 @@ class _HistoricalExpensesByCategoryChartState extends State<HistoricalExpensesBy
   ExtraLinesData get selectedMonthLines {
     return ExtraLinesData(
       verticalLines: [
-        if (selectedMonthIndex != null)
-          VerticalLine(x: selectedMonthIndex!.toDouble(), color: Colors.grey.shade700, strokeWidth: selectedMonthLineWidth),
+        VerticalLine(x: selectedMonthIndex.toDouble(), color: Colors.grey.shade700, strokeWidth: selectedMonthLineWidth),
       ],
     );
   }
@@ -285,7 +292,7 @@ class _HistoricalExpensesByCategoryChartState extends State<HistoricalExpensesBy
       setState(() {
         rows = result;
         rowsStartMonth = startMonth;
-        selectedMonthIndex = null;
+        selectedMonthIndex = result.isEmpty ? 0 : result.first.monthlyTotals.length - 1;
       });
     } catch (error, stackTrace) {
       logger.e('Error getting historical expenses by category', error: error, stackTrace: stackTrace);
@@ -347,12 +354,6 @@ class _HistoricalExpensesByCategoryChartState extends State<HistoricalExpensesBy
     });
   }
 
-  void clearSelectedMonth() {
-    setState(() {
-      selectedMonthIndex = null;
-    });
-  }
-
   void onChartTouch(FlTouchEvent event, LineTouchResponse? response) {
     var isSelectionEvent = event is FlTapUpEvent || event is FlPanUpdateEvent || event is FlLongPressMoveUpdate;
     var spots = response?.lineBarSpots;
@@ -395,7 +396,7 @@ class _HistoricalExpensesByCategoryChartState extends State<HistoricalExpensesBy
       if (activeRows.isEmpty) buildNoSelectionMessage(context) else buildChart(context),
       SizedBox(height: sectionSpacing),
       buildCategoryActions(context),
-      if (selectedMonthIndex != null) buildSelectedMonthHeader(context),
+      buildSelectedMonthTitle(context),
       buildCategoryList(context),
     ];
   }
@@ -440,16 +441,6 @@ class _HistoricalExpensesByCategoryChartState extends State<HistoricalExpensesBy
     );
   }
 
-  Widget buildSelectedMonthHeader(BuildContext context) {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      children: [
-        buildSelectedMonthTitle(context),
-        CupertinoButton(padding: EdgeInsets.zero, onPressed: clearSelectedMonth, child: const Text('Quitar selección')),
-      ],
-    );
-  }
-
   Widget buildSelectedMonthTitle(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.only(left: 10),
@@ -474,7 +465,7 @@ class _HistoricalExpensesByCategoryChartState extends State<HistoricalExpensesBy
           children: [
             buildCategoryIcon(context, category),
             buildCategoryName(context, category),
-            if (selectedMonthIndex != null && !isDisabled(category)) buildCategoryMonthDetails(context, row),
+            if (!isDisabled(category)) buildCategoryMonthDetails(context, row),
           ],
         ),
       ),
@@ -508,8 +499,8 @@ class _HistoricalExpensesByCategoryChartState extends State<HistoricalExpensesBy
   }
 
   Widget buildCategoryMonthDetails(BuildContext context, CategoryMonthlyExpenses row) {
-    var amount = row.monthlyTotals[selectedMonthIndex!];
-    var percent = variationPercent(row, selectedMonthIndex!);
+    var amount = row.monthlyTotals[selectedMonthIndex];
+    var percent = variationPercent(row, selectedMonthIndex);
     return Padding(
       padding: const EdgeInsets.only(right: 10),
       child: Row(

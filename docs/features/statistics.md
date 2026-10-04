@@ -9,7 +9,7 @@ Three chart views summarize movements, filterable by account, movement type, and
 - **Expenses by day** — a bar chart over a day range, with an optional accumulated mode.
 - **Historical expenses by category** — a monthly line chart (one point per month and category,
   current month included) to see how each category's spending varies month to month, with
-  currency and period selectors (`3 meses` / `6 meses` / `1 año` / `Custom`) and a category list
+  currency and period selectors (`6 meses` / `1 año` / `Custom`) and a category list
   that enables/disables each line and shows the month-over-month % variation. Expenses only.
 
 The same charts appear on the home **dashboard**, alongside the total-patrimony figure and a
@@ -48,9 +48,9 @@ por arriba.
   titles in `doCalculations`.
 - [historical_expenses_by_category.dart](../../lib/views/statistics/historical_expenses_by_category.dart) —
   `fl_chart` line chart; `CurrencySelector` + period selector (`Custom` abre
-  `DateRangeSelectorDialog`). Tocar o arrastrar sobre el gráfico marca un mes con una línea
-  vertical (sin tooltip) y la lista de categorías muestra el monto de ese mes y la variación
-  porcentual contra el mes anterior; tocar una categoría la habilita/deshabilita (tachada
+  `DateRangeSelectorDialog`). Tocar o arrastrar sobre el gráfico mueve una línea vertical al mes
+  más cercano (sin tooltip; arranca en el último mes) y la lista de categorías, ordenada por el
+  gasto de ese mes, muestra el monto y la variación porcentual contra el mes anterior; tocar una categoría la habilita/deshabilita (tachada
   cuando está deshabilitada), con botones `Habilitar todas` / `Deshabilitar todas`.
 - [all_expenses.dart](../../lib/views/statistics/all_expenses.dart) — the dashboard's "latest
   movements" section (a filtered `MovementsList`).
@@ -84,10 +84,10 @@ por arriba.
   *local* `creationDate` (no `toUtc()`). `UtilsService.monthIndex` is integer year/month
   arithmetic, so there is no DST issue. The X axis has one `MM/yy` label per month (one every
   `ceil(months / 12)` months beyond 12, only possible with `Custom`).
-- **Historical chart period options** — `3 meses` / `6 meses` / `1 año` are calendar months
-  ending at the current month (3 / 6 / 12 points); `Custom` covers the whole months touched by the
+- **Historical chart period options** — `6 meses` (default) / `1 año` are calendar months
+  ending at the current month (6 / 12 points); `Custom` covers the whole months touched by the
   chosen range.
-- **Historical chart current month** — included and partial in `3 meses` / `6 meses` / `1 año`,
+- **Historical chart current month** — included and partial in `6 meses` / `1 año`,
   and in a `Custom` range that ends in the current month; the last segment (previous month →
   current month) is dashed and the selection header shows ` (en curso)`. A `Custom` range that
   ends earlier has neither.
@@ -97,6 +97,9 @@ por arriba.
   (`+25%`); red when it rose, green when it fell. It is shown to the left of the amount, in a
   smaller font, and left empty (no text) for the first month of the period, whenever the previous
   month is 0, and when it rounds to `0%`.
+- **Historical chart selected month** — one month is always selected (the last one on load and
+  after every query); the category list is ordered by that month's spending (ties by period
+  total) and reorders when the selection moves. There is no way to clear the selection.
 - **Historical chart colors and selection** — colors use `Random(134)` over categories sorted by
   period total (same algorithm as the category table) and do not change when categories are
   toggled. `disabledCategories` and the period survive currency/period/account changes; changing

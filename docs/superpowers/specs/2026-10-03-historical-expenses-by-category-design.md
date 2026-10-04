@@ -14,7 +14,7 @@ variación porcentual contra el mes anterior.
 Orden de la vista, de arriba a abajo:
 
 1. Selector de moneda (`CurrencySelector`).
-2. Selector de período: `3 meses` / `6 meses` / `1 año` / `Custom`.
+2. Selector de período: `6 meses` / `1 año` / `Custom`.
 3. Gráfico de líneas.
 4. Botones "Habilitar todas" / "Deshabilitar todas".
 5. Lista de categorías con su color.
@@ -126,12 +126,14 @@ Mismo archivo y mismo contrato (`final Account? account`). Estado (sin cambios s
 marcado):
 
 - `Currency selectedCurrency` — inicial: `widget.account?.currency ?? Currency.USD`.
-- `String selectedPeriod` — `'3-months'` (default), `'6-months'`, `'1-year'`, `'custom'`.
+- `String selectedPeriod` — `'6-months'` (default), `'1-year'`, `'custom'`.
 - `DateTimeRange? customRange`.
 - `List<CategoryMonthlyExpenses>? rows` y `DateTime? rowsStartMonth` (primer mes de los datos
   cargados; `null` = cargando).
 - `Set<String> disabledCategories` — vacío = todas activas.
-- `int? selectedMonthIndex` — mes marcado en el gráfico (reemplaza a `selectedDayIndex`).
+- `late int selectedMonthIndex` — mes marcado en el gráfico (reemplaza a `selectedDayIndex`). Siempre hay
+  un mes seleccionado; al cargar los datos arranca en el **último** (el mes en curso cuando el
+  período lo incluye).
 - `final colorSeed = 134`.
 
 Período en **meses calendario**, con dos getters que devuelven el primer día de un mes
@@ -139,12 +141,11 @@ Período en **meses calendario**, con dos getters que devuelven el primer día d
 
 | Opción     | `selectedPeriodStartMonth`                                | `selectedPeriodEndMonth`                 |
 |------------|-----------------------------------------------------------|------------------------------------------|
-| `3-months` | `DateTime(now.year, now.month - 2)`                       | `DateTime(now.year, now.month)`          |
 | `6-months` | `DateTime(now.year, now.month - 5)`                       | `DateTime(now.year, now.month)`          |
 | `1-year`   | `DateTime(now.year, now.month - 11)`                      | `DateTime(now.year, now.month)`          |
 | `custom`   | `DateTime(customRange.start.year, customRange.start.month)` | `DateTime(customRange.end.year, customRange.end.month)` |
 
-Es decir, `3 meses` = mes actual y los 2 anteriores (3 puntos), `6 meses` = 6 puntos,
+Es decir, `6 meses` = mes actual y los 5 anteriores (6 puntos),
 `1 año` = 12 puntos, y `Custom` se ajusta a los meses **completos** que toca el rango elegido
 (un rango del 15/03 al 10/05 muestra marzo, abril y mayo). El **mes en curso está siempre
 incluido** y es parcial (ver más abajo).
@@ -153,13 +154,15 @@ incluido** y es parcial (ver más abajo).
 `lastDate: DateTime.now()`); si se cancela no cambia nada. Cambiar moneda, período o cuenta
 vuelve a consultar el repositorio. En `didUpdateWidget`, si cambia la cuenta, `selectedCurrency`
 pasa a `widget.account?.currency ?? Currency.USD`; el período, `customRange` y
-`disabledCategories` no se tocan. Cada nueva consulta limpia `selectedMonthIndex`. Se mantiene
+`disabledCategories` no se tocan. Cada nueva consulta reinicia `selectedMonthIndex` al último mes. Se mantiene
 la protección contra respuestas fuera de orden (`lastRequestId`).
 
 Cálculos derivados (getters, no se guardan):
 
-- **Categorías**: las de `rows`, ordenadas por `total` descendente. Ese orden alimenta la lista
-  y los colores.
+- **Categorías para los colores**: las de `rows`, ordenadas por `total` del período descendente.
+  Ese orden alimenta solo los colores, así que no cambian al seleccionar otro mes.
+- **Categorías para la lista**: las de `rows`, ordenadas por el **gasto del mes seleccionado**
+  descendente (desempate por `total` del período). La lista se reordena al cambiar el mes.
 - **Colores**: `Random(colorSeed)` recorriendo las categorías en ese orden y eligiendo
   `Colors.primaries[generator.nextInt(Colors.primaries.length)].shade700`, el mismo algoritmo
   que la tabla de "Gastos por categoría". El color de una categoría no cambia al
@@ -203,15 +206,14 @@ Lista de categorías:
 - Una fila por categoría: círculo de color de 20×20 en una columna de 50 + nombre a
   `fontSize: 18`, negrita. Tocar la fila alterna habilitada/deshabilitada; las deshabilitadas
   muestran el nombre **tachado** y el círculo atenuado, y no se dibujan.
-- **Sin mes seleccionado** las filas no muestran montos. **Con mes seleccionado**, encima de la
-  lista aparece un encabezado con el mes (`MM/yyyy`, agregando ` (en curso)` si es el mes en
-  curso) y un botón "Quitar selección". Cada fila **activa** muestra a la derecha el monto de
+- Siempre hay un mes seleccionado (por defecto el último). Encima de la lista aparece un
+  encabezado con el mes (`MM/yyyy`, agregando ` (en curso)` si es el mes en curso); no hay botón
+  para quitar la selección. Cada fila **activa** muestra a la derecha el monto de
   ese mes (`beautifyCurrency(monto, selectedCurrency)`) y, **a la izquierda del monto y con una
   fuente más chica**, la variación porcentual contra el mes anterior (`+25%`), coloreada:
   **rojo** (`Colors.red.shade900`) si el gasto subió, **verde** (`Colors.green.shade900`) si
   bajó. Si no hay variación (primer mes, mes anterior en `0` o `0%`) no se muestra nada. Las filas
-  deshabilitadas no muestran monto ni variación. El orden de la lista no cambia con la
-  selección.
+  deshabilitadas no muestran monto ni variación.
 
 Estados especiales:
 
@@ -256,8 +258,8 @@ Por la regla de docs-in-sync:
 1. El selector de tipo de gráfico incluye `Gastos por categoría históricos`.
 2. La vista muestra, en orden: selector de moneda, selector de período, gráfico, botones
    habilitar/deshabilitar todas, lista de categorías.
-3. El período ofrece `3 meses`, `6 meses`, `1 año`, `Custom`. `3 meses` muestra el mes actual y
-   los 2 anteriores (3 puntos por línea), `6 meses` 6 puntos y `1 año` 12. `Custom` abre
+3. El período ofrece `6 meses` (por defecto), `1 año`, `Custom`. `6 meses` muestra el mes actual
+   y los 5 anteriores (6 puntos por línea) y `1 año` 12. `Custom` abre
    `DateRangeSelectorDialog`, cancelar no altera la selección y el rango se ajusta a los meses
    completos que toca.
 4. Hay una línea por categoría activa, con el color de su fila; todas arrancan activas.
@@ -265,11 +267,12 @@ Por la regla de docs-in-sync:
    mes (una cada `ceil(meses / 12)` meses si son más de 12).
 6. El mes en curso está incluido; su último tramo se dibuja punteado y en el encabezado de la
    selección aparece `(en curso)`.
-7. Tocar o arrastrar sobre el gráfico marca una línea vertical en el mes más cercano y la lista
+7. Al abrir el gráfico el mes seleccionado es el último (el mes en curso) y se ve una línea
+   vertical ahí. Tocar o arrastrar sobre el gráfico mueve la línea al mes más cercano y la lista
    muestra, por categoría activa, el monto de ese mes y la variación porcentual contra el mes
    anterior, a la izquierda del monto y más chica (`+25%`, rojo si subió, verde si bajó; sin texto
-   si no hay mes anterior, si este es `0` o si no cambió);
-   "Quitar selección" la limpia.
+   si no hay mes anterior, si este es `0` o si no cambió). La lista se ordena por el gasto del
+   mes seleccionado, de mayor a menor. No hay botón "Quitar selección".
 8. Los montos se convierten a la moneda elegida con la tasa vigente en la fecha de cada
    movimiento.
 9. Un movimiento del último día del mes (por ejemplo a las 23:30) cuenta en ese mes.
