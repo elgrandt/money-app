@@ -8,6 +8,15 @@ import 'package:money/services/database.service.dart';
 import 'package:money/services/utils.service.dart';
 import 'package:sqflite/sqflite.dart';
 
+class CategoryDailyExpenses {
+  final String category;
+  final List<double> dailyTotals;
+
+  const CategoryDailyExpenses({ required this.category, required this.dailyTotals });
+
+  double get total => dailyTotals.fold<double>(0, (sum, value) => sum + value);
+}
+
 class MovementsRepository extends BaseRepository<Movement> {
   static List<DatabaseColumnDefinition> movementColumns = [
     DatabaseColumnDefinition('id', DatabaseColumnType.INTEGER, primaryKey: PrimaryKeyDefinition(autoincrement: true)),
@@ -238,5 +247,29 @@ class MovementsRepository extends BaseRepository<Movement> {
       }
       return map;
     }).entries.map((entry) => {'date': entry.key, 'total': entry.value}).toList();
+  }
+
+  Future<List<CategoryDailyExpenses>> getExpensesByCategoryByDay(Account? account, DateTime startDate, DateTime endDate, Currency displayCurrency) async {
+    var where = 'type = ? AND creationDate >= ? AND creationDate < ?';
+    List<Object?> whereArgs = [
+      MovementType.REMOVE.name,
+      DateTime(startDate.year, startDate.month, startDate.day).toIso8601String(),
+      DateTime(endDate.year, endDate.month, endDate.day + 1).toIso8601String(),
+    ];
+    if (account != null) {
+      where += ' AND (sourceId = ? OR targetId = ?)';
+      whereArgs.add(account.id);
+      whereArgs.add(account.id);
+    }
+    var movements = await find(where: where, args: whereArgs);
+    var dayCount = utilsService.dayIndex(startDate, endDate) + 1;
+    Map<String, List<double>> dailyTotalsByCategory = {};
+    for (var movement in movements) {
+      var creationDate = movement.creationDate!;
+      var amount = utilsService.convertCurrenciesAt(movement.amount, movement.source!.currency, displayCurrency, creationDate);
+      var dailyTotals = dailyTotalsByCategory.putIfAbsent(movement.category, () => List<double>.filled(dayCount, 0));
+      dailyTotals[utilsService.dayIndex(startDate, creationDate)] += amount;
+    }
+    return dailyTotalsByCategory.entries.map((entry) => CategoryDailyExpenses(category: entry.key, dailyTotals: entry.value)).toList();
   }
 }

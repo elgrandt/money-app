@@ -154,6 +154,12 @@ class UtilsService {
     return resolved ?? rateHistory.first;
   }
 
+  int dayIndex(DateTime startDate, DateTime date) {
+    return DateTime.utc(date.year, date.month, date.day)
+        .difference(DateTime.utc(startDate.year, startDate.month, startDate.day))
+        .inDays;
+  }
+
   String beautifyCurrency(double number, Currency currency) {
     var formatter = NumberFormat.currency(locale: 'es_AR', name: currency.name, symbol: getCurrencySymbol(currency));
     formatter.minimumIntegerDigits = 1;
