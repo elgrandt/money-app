@@ -514,8 +514,7 @@ class _HistoricalExpensesByCategoryChartState extends State<HistoricalExpensesBy
       padding: const EdgeInsets.only(right: 10),
       child: Row(
         mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.baseline,
-        textBaseline: TextBaseline.alphabetic,
+        crossAxisAlignment: CrossAxisAlignment.center,
         children: [
           if (hasVariation(percent)) buildCategoryVariation(context, percent!),
           Text(utilsService.beautifyCurrency(amount, selectedCurrency), style: categoryTextStyle),
