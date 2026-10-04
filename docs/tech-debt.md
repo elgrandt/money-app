@@ -35,6 +35,20 @@ most inline `GetIt`, deprecated APIs, and several bugs). What remains is below.
 
 - Unused codegen dependencies in `pubspec.yaml`: `json_serializable`, `json_annotation`,
   `build_runner` — nothing uses them; models are hand-written.
+- **Date-range filters compare text with mismatched formats.** `creationDate` is stored with
+  `toIso8601String()` (`2026-10-03T10:00:00.000`), but `getExpensesByCategory` /
+  `getExpensesByDay` bind `startDate.toString()` (`2026-10-03 23:59:59.000`). Since `'T'` sorts
+  after `' '`, `creationDate <= endDate` excludes every movement on the end date itself (e.g.
+  "Mes pasado" and `Custom` lose the last day). Fix by binding `toIso8601String()`.
+
+- **Statistics queries return `Map<String, Object?>`** instead of typed result classes (see
+  "Typed query results" in [data-layer.md](data-layer.md)):
+  `getExpensesByCategory` (`{'category', 'total'}`) and `getExpensesByDay`
+  (`{'date', 'total'}`) in
+  [movements.repository.dart](../lib/repositories/movements.repository.dart), consumed by
+  [expenses_by_category.dart](../lib/views/statistics/expenses_by_category.dart),
+  [expenses_by_day.dart](../lib/views/statistics/expenses_by_day.dart). Give each a named class
+  and replace the `as String` / `as double` casts in those views.
 
 ## Framework smells (not a documented-pattern violation)
 
