@@ -98,6 +98,8 @@ class _HistoricalExpensesByCategoryChartState extends State<HistoricalExpensesBy
   List<CategoryMonthlyExpenses> get sortedRows {
     var sorted = [...rows!];
     sorted.sort((a, b) {
+      var byDisabled = isDisabled(a.category) == isDisabled(b.category) ? 0 : (isDisabled(a.category) ? 1 : -1);
+      if (byDisabled != 0) return byDisabled;
       var byMonth = b.monthlyTotals[selectedMonthIndex].compareTo(a.monthlyTotals[selectedMonthIndex]);
       return byMonth != 0 ? byMonth : b.total.compareTo(a.total);
     });

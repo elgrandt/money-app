@@ -162,7 +162,9 @@ Cálculos derivados (getters, no se guardan):
 - **Categorías para los colores**: las de `rows`, ordenadas por `total` del período descendente.
   Ese orden alimenta solo los colores, así que no cambian al seleccionar otro mes.
 - **Categorías para la lista**: las de `rows`, ordenadas por el **gasto del mes seleccionado**
-  descendente (desempate por `total` del período). La lista se reordena al cambiar el mes.
+  descendente (desempate por `total` del período). Las categorías **deshabilitadas van siempre al
+  final**, también ordenadas entre sí por esos mismos criterios. La lista se reordena al cambiar
+  el mes y al habilitar o deshabilitar una categoría.
 - **Colores**: `Random(colorSeed)` recorriendo las categorías en ese orden y eligiendo
   `Colors.primaries[generator.nextInt(Colors.primaries.length)].shade700`, el mismo algoritmo
   que la tabla de "Gastos por categoría". El color de una categoría no cambia al

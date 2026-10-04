@@ -99,7 +99,9 @@ por arriba.
   month is 0, and when it rounds to `0%`.
 - **Historical chart selected month** — one month is always selected (the last one on load and
   after every query); the category list is ordered by that month's spending (ties by period
-  total) and reorders when the selection moves. There is no way to clear the selection.
+  total) and reorders when the selection moves. Disabled categories always go last (ordered among
+  themselves the same way), so toggling a category moves its row. There is no way to clear the
+  selection.
 - **Historical chart colors and selection** — colors use `Random(134)` over categories sorted by
   period total (same algorithm as the category table) and do not change when categories are
   toggled. `disabledCategories` and the period survive currency/period/account changes; changing
