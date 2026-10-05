@@ -1,6 +1,8 @@
+import 'package:get_it/get_it.dart';
 import 'package:money/models/category.model.dart';
 import 'package:money/models/movement.model.dart';
 import 'package:money/repositories/base.repository.dart';
+import 'package:money/services/database.service.dart';
 import 'package:sqflite/sqflite.dart';
 
 class CategoriesRepository extends BaseRepository<Category> {
@@ -9,6 +11,8 @@ class CategoriesRepository extends BaseRepository<Category> {
     DatabaseColumnDefinition('name', DatabaseColumnType.TEXT),
     DatabaseColumnDefinition('movementType', DatabaseColumnType.TEXT),
   ];
+
+  var databaseService = GetIt.instance.get<DatabaseService>();
 
   CategoriesRepository(Database db): super(db, 'categories', CategoriesRepository.categoryColumns);
 
@@ -45,5 +49,22 @@ class CategoriesRepository extends BaseRepository<Category> {
       categoriesByType[movementType] = categories.where((category) => category.movementType == movementType).toList();
     }
     return categoriesByType;
+  }
+
+  Future<void> rename(Category category, String newName) async {
+    var oldName = category.name;
+    if (oldName == newName) return;
+    var renamedMovementIds = <int>[];
+    await db.transaction((transaction) async {
+      await transaction.update(tableName, { 'name': newName }, where: 'id = ?', whereArgs: [category.id]);
+      var renamedMovements = await transaction.query('movements', columns: ['id'], where: 'category = ? AND type = ?', whereArgs: [oldName, category.movementType.name]);
+      renamedMovementIds = renamedMovements.map((row) => row['id'] as int).toList();
+      await transaction.update('movements', { 'category': newName }, where: 'category = ? AND type = ?', whereArgs: [oldName, category.movementType.name]);
+    });
+    category.name = newName;
+    events.emit('change', UpdateEvent(category.id!, category));
+    for (var movementId in renamedMovementIds) {
+      databaseService.movementsRepository.events.emit('change', TableUpdateEvent<Movement>(TableUpdateEventType.UPDATE, movementId));
+    }
   }
 }

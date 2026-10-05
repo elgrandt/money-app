@@ -20,15 +20,21 @@ movement.
 
 - `create(movementType, name)` — inserts a category
   ([:36-40](../../lib/repositories/categories.repository.dart#L36-L40)).
+- `rename(category, newName)` — renombra la categoría y, en la misma transacción, actualiza
+  `movements.category` de todos los movimientos con el nombre anterior **y el mismo
+  `movementType`** (el vínculo movimiento-categoría es por nombre, no por id). Emite un
+  `UpdateEvent` en `categoriesRepository.events` y un evento `UPDATE` por cada movimiento
+  afectado en `movementsRepository.events`. No hace nada si el nombre no cambia.
 - `getCategoriesByType()` — returns a `Map<MovementType, List<Category>>` grouping all
   categories by type ([:42-49](../../lib/repositories/categories.repository.dart#L42-L49)).
 
 ## Views involved
 
 - [category_list.dart](../../lib/views/categories/category_list.dart) — the `/categories`
-  screen; a tabbed list (one tab per `MovementType`) with per-row delete and a FAB to add.
-- [new_category.dialog.dart](../../lib/views/categories/new_category.dialog.dart) — create
-  dialog (name), receiving the `movementType` to attach.
+  screen; a tabbed list (one tab per `MovementType`) with per-row edit (pencil, left of delete) and delete, and a FAB to add.
+- [new_category.dialog.dart](../../lib/views/categories/new_category.dialog.dart) — create/edit
+  dialog (name), receiving the `movementType` and, to edit, the `category`. When editing it
+  rejects a name already used by another category of the same type.
 - The movement dialog uses categories for its category selector and can open the create dialog
   inline — [new_movement.dialog.dart](../../lib/views/movements/new_movement.dialog.dart).
 
