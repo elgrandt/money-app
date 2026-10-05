@@ -69,6 +69,12 @@ class _CategoryListState extends State<CategoryList> {
     });
   }
 
+  Future<void> openEditCategoryDialog(Category category) async {
+    await showDialog<Category?>(context: context, builder: (context) {
+      return NewCategoryDialog(movementType: category.movementType, category: category);
+    });
+  }
+
   Future<void> deleteCategory(Category category) async {
     var confirmed = await utilsService.confirm(context, title: 'Eliminar categoría', message: '¿Estás seguro que deseas eliminar esta categoría?');
     if (!confirmed) return;
@@ -134,6 +140,10 @@ class _CategoryListState extends State<CategoryList> {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
+            IconButton(
+              icon: Icon(Icons.edit, color: Theme.of(context).primaryColor),
+              onPressed: () => openEditCategoryDialog(category),
+            ),
             IconButton(
               icon: Icon(Icons.delete, color: Colors.red.shade900),
               onPressed: () => deleteCategory(category),

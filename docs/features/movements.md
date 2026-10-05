@@ -18,7 +18,8 @@ a movement is implemented as remove-then-create.
 
 - `type` — `MovementType` (`ADD`, `REMOVE`, `TRANSFER`); `movementTypeNames` maps each to its
   Spanish label.
-- `description`, `amount`, `category`.
+- `description`, `amount`, `category` — the category **name** (not an id); renaming a category
+  rewrites it on the matching movements, see [categories.md](categories.md).
 - `conversionRate` — set only for cross-currency transfers.
 - `source`, `target` — nullable `Account`s (which are set depends on `type`).
 - `creationDate`.
