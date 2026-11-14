@@ -267,7 +267,7 @@ class _ExpensesByDayChartState extends State<ExpensesByDayChart> {
   Widget bottomTitleWidgets(String value, TitleMeta meta, bool show) {
     if (show) {
       return SideTitleWidget(
-        axisSide: meta.axisSide,
+        meta: meta,
         child: Padding(
           padding: const EdgeInsets.only(top: 35),
           child: Transform.rotate(angle: 70 * pi / 180, child: Text(value, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold))),
@@ -275,7 +275,7 @@ class _ExpensesByDayChartState extends State<ExpensesByDayChart> {
       );
     } else {
       return SideTitleWidget(
-        axisSide: meta.axisSide,
+        meta: meta,
         child: const SizedBox(),
       );
     }
@@ -297,7 +297,7 @@ class _ExpensesByDayChartState extends State<ExpensesByDayChart> {
       );
     } else {
       return SideTitleWidget(
-        axisSide: meta.axisSide,
+        meta: meta,
         child: const SizedBox(),
       );
     }
