@@ -51,7 +51,6 @@ dependencies:
   file_picker: ^13.3.3
   apple_foundation_models: ^0.5.2
   speech_to_text: ^7.5.0
-  system_llm: ^0.2.0
 
 dev_dependencies:
   flutter_test:

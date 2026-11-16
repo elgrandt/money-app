@@ -4,6 +4,8 @@ import 'package:get_it/get_it.dart';
 import 'package:logger/logger.dart';
 import 'package:money/services/database.service.dart';
 import 'package:money/services/utils.service.dart';
+import 'package:money/services/ai.service.dart';
+import 'package:money/services/in_device_ai.service.dart';
 import 'package:money/views/accounts/account_list.dart';
 import 'package:money/views/backups/backups.dart';
 import 'package:money/views/categories/category_list.dart';
@@ -32,6 +34,7 @@ void initializeDatabase() {
 void initializeServices() {
   GetIt.instance.registerSingleton(UtilsService());
   GetIt.instance.registerSingleton(DatabaseService());
+  GetIt.instance.registerSingleton<AIService>(InDeviceAIService());
 }
 
 class MoneyApp extends StatelessWidget {

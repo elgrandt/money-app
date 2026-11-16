@@ -17,6 +17,15 @@ class CategoryMonthlyExpenses {
   double get total => monthlyTotals.fold<double>(0, (sum, value) => sum + value);
 }
 
+class DescriptionCategoryUsage {
+  final MovementType type;
+  final String description;
+  final String category;
+  final int uses;
+
+  const DescriptionCategoryUsage({ required this.type, required this.description, required this.category, required this.uses });
+}
+
 class MovementsRepository extends BaseRepository<Movement> {
   static List<DatabaseColumnDefinition> movementColumns = [
     DatabaseColumnDefinition('id', DatabaseColumnType.INTEGER, primaryKey: PrimaryKeyDefinition(autoincrement: true)),
@@ -247,6 +256,18 @@ class MovementsRepository extends BaseRepository<Movement> {
       }
       return map;
     }).entries.map((entry) => {'date': entry.key, 'total': entry.value}).toList();
+  }
+
+  Future<List<DescriptionCategoryUsage>> getDescriptionCategoryUsages() async {
+    var query = 'SELECT type, LOWER(TRIM(description)) AS description, category, COUNT(*) AS uses FROM $tableName '
+        'WHERE TRIM(description) != \'\' AND category != \'\' GROUP BY type, LOWER(TRIM(description)), category';
+    var results = await db.rawQuery(query);
+    return results.map((row) => DescriptionCategoryUsage(
+      type: MovementType.values.byName(row['type'] as String),
+      description: row['description'] as String,
+      category: row['category'] as String,
+      uses: row['uses'] as int,
+    )).toList();
   }
 
   Future<List<CategoryMonthlyExpenses>> getExpensesByCategoryByMonth(Account? account, DateTime startMonth, DateTime endMonth, Currency displayCurrency) async {
