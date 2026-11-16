@@ -26,6 +26,10 @@
 	<string>$(FLUTTER_BUILD_NUMBER)</string>
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
+	<key>NSMicrophoneUsageDescription</key>
+	<string>Money usa el micrófono para crear movimientos con tu voz.</string>
+	<key>NSSpeechRecognitionUsageDescription</key>
+	<string>Money usa el reconocimiento de voz para entender el movimiento que dictás.</string>
 	<key>UIApplicationSceneManifest</key>
 	<dict>
 		<key>UIApplicationSupportsMultipleScenes</key>
