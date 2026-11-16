@@ -4,7 +4,7 @@ import 'package:flutter/material.dart';
 
 class Navbar extends StatefulWidget {
   final Widget body;
-  final FloatingActionButton? floatingActionButton;
+  final Widget? floatingActionButton;
   final String title;
 
   const Navbar({ super.key, required this.body, this.floatingActionButton, this.title = 'Money' });
