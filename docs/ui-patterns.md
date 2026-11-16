@@ -33,6 +33,26 @@ Excepción: un diálogo que contiene una lista scrolleable (ej.
 `Dialog → Padding → SizedBox(height: 75% de la pantalla) → Column [título, selectores, lista
 Expanded, botón Cerrar]`, sin `SingleChildScrollView`.
 
+## Voice assistant UI
+
+The home screen (dashboard and account tabs) shows a second, smaller floating action button
+(`FloatingActionButton.small`, `Icons.auto_awesome`, same style as the `+`) above the `+`, only when
+`AIService.isAvailable()` is true. `Navbar.floatingActionButton` is a `Widget?` so a
+screen can pass a `Column` of buttons; each button needs its own `heroTag`. See
+[home.dart](../lib/views/home/home.dart).
+
+The flow uses two regular dialogs (no bottom sheets), both following the dialog shell above:
+
+- [voice_listening.dialog.dart](../lib/views/movements/voice_listening.dialog.dart) — "Te escucho…":
+  a pulsing microphone and `Escuchando…` with the live transcript, then a spinner and
+  `Interpretando…`, or an error message with `Cerrar`. It is not dismissible by tapping outside
+  (`barrierDismissible: false`) so a stray tap does not cancel the recording.
+- [voice_movement_summary.dialog.dart](../lib/views/movements/voice_movement_summary.dialog.dart) —
+  "Resumen del movimiento": a list of name/value rows (Tipo, Cuenta — or Desde and Hacia in transfers —, Monto, and for a
+  cross-currency transfer Tasa de conversión and Recibe, Categoría, Descripción when not empty,
+  Fecha y hora) with `Modificar` and `Crear`. An incomplete movement skips this dialog and opens
+  `NewMovementDialog(movement: ...)` directly (a movement without an `id` is a new one to complete; with an `id` it is an edit).
+
 ## Title style
 
 Dialog titles are centered, `fontSize: 20`, `Theme.of(context).primaryColor`, bold:

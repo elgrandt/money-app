@@ -286,7 +286,7 @@ Hallazgos sobre el prompt (tres iteraciones):
   moneda, esa; en transferencias la dirección la da el modelo. Una cuenta que el modelo "adivinó"
   sin que la frase la mencione no vale (en transferencia queda incompleto; en gasto/ingreso se
   usa el fallback del diseño).
-- Combinación POC: la voz usa `speech_to_text` (`onDevice: true`, `pauseFor` ~1,5–2 s); `system_llm`
+- Combinación POC: la voz usa `speech_to_text` (`onDevice: true`, `pauseFor` 5 s, ajustado tras probar en el teléfono: con menos cortaba la frase al pensar; el botón "Listo" termina antes); `system_llm`
   queda como segundo proveedor de voz y de LLM detrás de las mismas interfaces.
 
 Errores que el spike no resolvió y quedan para la comparación final: algunas categorías
@@ -308,3 +308,14 @@ como evidencia) y la elección de cuenta en ingresos.
 - Detección de silencio (umbral) y duración máxima de escucha.
 - Redacción del prompt de sistema e instrucciones al modelo (iterar durante el POC).
 - Cómo se cablea `isAvailable()` a la UI sin parpadeo del botón al abrir la pantalla.
+
+## Simplificación posterior (2026-11-16)
+
+Terminada la comparación (se eligió `speech_to_text` + Apple Foundation Models) se simplificó el código:
+las interfaces intermedias `SpeechProvider` / `AiProvider`, el asistente compuesto, la configuración con
+constantes y las implementaciones de `system_llm` (incluida la dependencia) se eliminaron. Quedó una única
+interfaz `AIService` (`isAvailable`, `listen`, `stop`, `cancel`; el estado de la escucha en curso vive en el
+servicio y una escucha nueva cancela la anterior) con una única implementación, `InDeviceAIService`, que
+contiene también el esquema, el prompt, los parsers de español y el armado del `Movement` como métodos
+privados. Archivos: `lib/services/ai.service.dart` y `lib/services/in_device_ai.service.dart`. Las secciones
+anteriores describen el diseño original y los resultados del spike.

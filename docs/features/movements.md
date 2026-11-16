@@ -62,6 +62,38 @@ a movement is implemented as remove-then-create.
   moneda de los montos. Se abre al tocar el nombre de una categoría en el gráfico de gastos por
   categoría.
 
+## Voice assistant (creating a movement by speaking)
+
+Spec: [2026-11-14-voice-ai-movement-design.md](../superpowers/specs/2026-11-14-voice-ai-movement-design.md).
+A spoken sentence ("Gasté cien pesos en Carrefour") becomes a real `Movement` through
+[in_device_ai.service.dart](../../lib/services/in_device_ai.service.dart), the only implementation of
+`AIService` ([ai.service.dart](../../lib/services/ai.service.dart), which also holds the data the
+service receives: accounts, categories per type, current time, the screen's account and the
+category hints from the user's history). Everything lives in that one class: listening, the model
+call, the fields the model must return, the model instructions, the Spanish number and date
+parsing, and the rules that turn all of it into a `Movement`. **If you change `Movement`, review
+the field list and `_buildMovement` in that file.**
+
+How a sentence is resolved: the model extracts and classifies, Dart resolves and validates.
+The model copies the exact words of the amount, rate, date and category from the sentence;
+Dart only trusts text that is really in the transcript and converts it itself. The category is
+resolved in this order: a category named in the sentence; then **the user's own history** (a past
+movement's description, such as "Coto" or "Uber", that appears in the sentence gives the category
+it was used with most, the longest matching phrase wins, see
+`MovementsRepository.getDescriptionCategoryUsages`); then the model's name, only if it is in the
+list for the movement type and its quoted words are in the sentence. A description that only
+repeats the category or the name of any account (ignoring case, accents, a trailing "s" and
+leading articles or prepositions such as "la" or "en", so "la cochera" and "en mano" count) is
+dropped, as is a bare "cuenta"; the category and the account are already shown. Accounts follow the same rule
+(mentioned by name, or the only account of a currency that was said); an account the model
+guessed without the sentence supporting it is ignored.
+
+"Not understood" is encoded as empty values the new-movement dialog already treats as missing:
+`amount = 0`, `category = ''`, and `null` accounts or conversion rate. `isIncomplete` in
+[home.dart](../../lib/views/home/home.dart) is true when the
+amount or category is missing, the account the type needs is missing, or a cross-currency
+transfer has no rate. Defaults: type `REMOVE`, date now, empty description (at most 3 words).
+
 ## Edge cases
 
 - **Currency conversion on transfer** — when `source.currency != target.currency`, the dialog

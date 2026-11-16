@@ -57,6 +57,23 @@ the repositories, which broadcast events that the views listen to and refresh fr
 Routes are declared in `MoneyApp` (`/`, `/accounts`, `/categories`, `/statistics`,
 `/backups`) — [main.dart:55-61](../lib/main.dart#L55-L61).
 
+## AI service (creating a movement by voice)
+
+Creating a movement by voice goes through one interface, `AIService`
+([ai.service.dart](../lib/services/ai.service.dart)): `isAvailable()` (the UI hides the button when it is
+false), `listen(MovementPromptContext, onPartialTranscript:, onListeningFinished:)` (returns the
+interpreted `Movement`), `stop()` and `cancel()`. Failures arrive as `AIException` with an `AIFailure`.
+The service holds the state of the one listening in progress: starting a `listen` cancels any previous
+one, so there is never more than one at a time.
+
+The only implementation is `InDeviceAIService`
+([in_device_ai.service.dart](../lib/services/in_device_ai.service.dart)): it listens with
+`speech_to_text` (on-device) and interprets the transcript with Apple Foundation Models. It is
+registered in `GetIt` at startup (`initializeServices()`). To use another engine (a cloud API, a model
+that takes audio directly) add another class implementing `AIService` and register it instead; the
+UI does not change. How a sentence becomes a `Movement` is described in
+[movements.md](features/movements.md#voice-assistant-creating-a-movement-by-speaking).
+
 ## The `initialized` gate
 
 Because `runApp` runs before the database is open, any DB access must wait. `DatabaseService`
