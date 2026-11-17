@@ -420,7 +420,7 @@ class _HistoricalExpensesByCategoryChartState extends State<HistoricalExpensesBy
   Widget buildBottomTitle(double value, TitleMeta meta) {
     if (value != value.toInt() || value >= monthCount || value.toInt() % labelStep != 0) return const SizedBox();
     return SideTitleWidget(
-      axisSide: meta.axisSide,
+      meta: meta,
       angle: axisLabelAngle,
       child: Text(DateFormat('MM/yy').format(monthAt(value.toInt())), style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold)),
     );

@@ -20,7 +20,7 @@ class Backups extends StatelessWidget {
     fileName = fileName.replaceAll('T', '-');
     fileName = fileName.substring(0, fileName.indexOf('.'));
     fileName = 'backup-$fileName.moneybak';
-    await FilePicker.platform.saveFile(
+    await FilePicker.saveFile(
       dialogTitle: 'Por favor seleccione donde guardar el backup:',
       fileName: fileName,
       bytes: await file.readAsBytes(),
@@ -28,10 +28,10 @@ class Backups extends StatelessWidget {
   }
 
   Future<void> restoreBackup(BuildContext context) async {
-    var file = await FilePicker.platform.pickFiles();
+    var file = await FilePicker.pickFile();
     if (file == null) return;
     var dir = await getApplicationDocumentsDirectory();
-    File backup = File(file.files.single.path!);
+    File backup = File(file.path!);
     File db = File('${ dir.path }/db.sqlite');
     await db.writeAsBytes(await backup.readAsBytes());
     if (!context.mounted) return;

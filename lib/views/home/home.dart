@@ -7,6 +7,7 @@ import 'package:money/models/movement.model.dart';
 import 'package:money/repositories/base.repository.dart';
 import 'package:money/services/database.service.dart';
 import 'package:money/services/utils.service.dart';
+import 'package:money/services/ai.service.dart';
 import 'package:money/views/accounts/new_account.dialog.dart';
 import 'package:money/views/generics/currency_selector.dart';
 import 'package:money/views/generics/loader.dart';
@@ -16,6 +17,8 @@ import 'package:money/views/home/dashboard.dart';
 import 'package:money/views/home/movements_list.dart';
 import 'package:money/views/home/total_viewer.dart';
 import 'package:money/views/movements/new_movement.dialog.dart';
+import 'package:money/views/movements/voice_listening.dialog.dart';
+import 'package:money/views/movements/voice_movement_summary.dialog.dart';
 
 class Home extends StatefulWidget {
   const Home({super.key});
@@ -28,16 +31,24 @@ class _HomeState extends State<Home> {
   var databaseService = GetIt.instance.get<DatabaseService>();
   var utilsService = GetIt.instance.get<UtilsService>();
   var logger = GetIt.instance.get<Logger>();
+  var aiService = GetIt.instance.get<AIService>();
 
   List<Account>? accounts;
   int selectedTabIndex = 0;
+  bool voiceAssistantAvailable = false;
   List<GlobalKey<_HomeTabState>> tabKeys = [GlobalKey()];
   var initializedCurrencies = false;
   EventListener<TableUpdateEvent<Account>>? accountsListener;
 
+  Account? get currentAccount {
+    if (selectedTabIndex > 0 && accounts != null) return accounts![selectedTabIndex - 1];
+    return null;
+  }
+
   @override
   void initState() {
     super.initState();
+    loadVoiceAssistantAvailability();
     getAccounts();
     initializeCurrencies();
     watchAccountChanges();
@@ -83,14 +94,56 @@ class _HomeState extends State<Home> {
     });
   }
 
-  Future<void> openNewMovementDialog() async {
-    Account? selectedAccount;
-    if (selectedTabIndex > 0 && accounts != null) {
-      selectedAccount = accounts![selectedTabIndex - 1];
-    }
-    await showDialog<Movement?>(context: context, builder: (context) {
-      return NewMovementDialog(selectedAccount: selectedAccount);
+  Future<void> loadVoiceAssistantAvailability() async {
+    var available = await aiService.isAvailable();
+    if (!mounted) return;
+    setState(() {
+      voiceAssistantAvailable = available;
     });
+  }
+
+  Future<void> openNewMovementDialog() async {
+    await showDialog<Movement?>(context: context, builder: (context) {
+      return NewMovementDialog(selectedAccount: currentAccount);
+    });
+  }
+
+  Future<MovementPromptContext> buildPromptContext() async {
+    var categoriesByType = await databaseService.categoriesRepository.getCategoriesByType();
+    var descriptionUsages = await databaseService.movementsRepository.getDescriptionCategoryUsages();
+    return MovementPromptContext(now: DateTime.now(), accounts: accounts!, categoriesByType: categoriesByType, screenAccount: currentAccount, descriptionUsages: descriptionUsages);
+  }
+
+  bool isIncomplete(Movement movement) {
+    if (movement.amount <= 0 || movement.category.isEmpty) return true;
+    switch (movement.type) {
+      case MovementType.ADD:
+        return movement.target == null;
+      case MovementType.REMOVE:
+        return movement.source == null;
+      case MovementType.TRANSFER:
+        return movement.source == null || movement.target == null || (movement.source!.currency != movement.target!.currency && movement.conversionRate == null);
+    }
+  }
+
+  Future<void> openPrefilledMovementDialog(Movement movement) async {
+    await showDialog<Movement?>(context: context, builder: (context) {
+      return NewMovementDialog(selectedAccount: currentAccount, movement: movement);
+    });
+  }
+
+  Future<void> openVoiceMovementFlow() async {
+    var promptContext = await buildPromptContext();
+    if (!mounted) return;
+    var movement = await showDialog<Movement?>(context: context, barrierDismissible: false, builder: (context) {
+      return VoiceListeningDialog(promptContext: promptContext);
+    });
+    if (movement == null || !mounted) return;
+    if (isIncomplete(movement)) return openPrefilledMovementDialog(movement);
+    var result = await showDialog<VoiceSummaryResult?>(context: context, builder: (context) {
+      return VoiceMovementSummaryDialog(movement: movement);
+    });
+    if (result == VoiceSummaryResult.modify && mounted) await openPrefilledMovementDialog(movement);
   }
 
   Future<void> openNewAccountDialog() async {
@@ -102,13 +155,33 @@ class _HomeState extends State<Home> {
   @override
   Widget build(BuildContext context) {
     return Navbar(
-      floatingActionButton: accounts != null && accounts!.isNotEmpty ? FloatingActionButton(
-        onPressed: openNewMovementDialog,
-        backgroundColor: Theme.of(context).primaryColor,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(100)),
-        child: const Icon(Icons.add, color: Colors.white),
-      ) : null,
+      floatingActionButton: accounts != null && accounts!.isNotEmpty ? buildFloatingActionButtons(context) : null,
       body: accounts == null || !initializedCurrencies ? const Loader() : accounts!.isEmpty ? buildWelcomePage(context) : buildTabs(context),
+    );
+  }
+
+  Widget buildFloatingActionButtons(BuildContext context) {
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        if (voiceAssistantAvailable) ...[
+          FloatingActionButton.small(
+            heroTag: 'voice-movement',
+            onPressed: openVoiceMovementFlow,
+            backgroundColor: Theme.of(context).primaryColor,
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(100)),
+            child: const Icon(Icons.auto_awesome, color: Colors.white),
+          ),
+          const SizedBox(height: 12),
+        ],
+        FloatingActionButton(
+          heroTag: 'new-movement',
+          onPressed: openNewMovementDialog,
+          backgroundColor: Theme.of(context).primaryColor,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(100)),
+          child: const Icon(Icons.add, color: Colors.white),
+        ),
+      ],
     );
   }
 

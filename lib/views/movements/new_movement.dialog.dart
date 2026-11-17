@@ -35,6 +35,7 @@ class _NewMovementDialogState extends State<NewMovementDialog> {
   double amount = 0;
   double rawConversionRate = 0;
   String? selectedCategory;
+  bool movementApplied = false;
   late Account source;
   late Account target;
   late DateTime creationDate;
@@ -54,12 +55,11 @@ class _NewMovementDialogState extends State<NewMovementDialog> {
   }
 
   get isEditing {
-    return widget.movement != null;
+    return widget.movement?.id != null;
   }
 
   bool get isRateInverse {
-    return source.currency != target.currency &&
-        utilsService.convertCurrencies(1, source.currency, target.currency) < 1;
+    return utilsService.isRateInverse(source.currency, target.currency);
   }
 
   double get conversionRate {
@@ -115,6 +115,7 @@ class _NewMovementDialogState extends State<NewMovementDialog> {
         this.categoriesByType = categoriesByType;
         selectedCategory = selected;
       });
+      applyMovementWhenReady();
     });
   }
 
@@ -126,19 +127,16 @@ class _NewMovementDialogState extends State<NewMovementDialog> {
       setState(() {
         this.accounts = accounts;
       });
-      if (isEditing) {
-        fillFormDataWithMovement(widget.movement!);
-      } else {
-        setState(() {
-          if (widget.selectedAccount != null) {
-            source = widget.selectedAccount!;
-            target = widget.selectedAccount!;
-          } else {
-            source = accounts.first;
-            target = accounts.first;
-          }
-        });
-      }
+      setState(() {
+        if (widget.selectedAccount != null) {
+          source = widget.selectedAccount!;
+          target = widget.selectedAccount!;
+        } else {
+          source = accounts.first;
+          target = accounts.first;
+        }
+      });
+      applyMovementWhenReady();
     } catch (error, stackTrace) {
       logger.e('Error getting accounts', error: error, stackTrace: stackTrace);
     }
@@ -172,19 +170,27 @@ class _NewMovementDialogState extends State<NewMovementDialog> {
     );
   }
 
+  void applyMovementWhenReady() {
+    var movement = widget.movement;
+    if (movement == null || movementApplied || accounts == null || categoriesByType == null) return;
+    movementApplied = true;
+    fillFormDataWithMovement(movement);
+  }
+
   void fillFormDataWithMovement(Movement movement) {
+    var fallbackAccount = widget.selectedAccount ?? accounts!.first;
     setState(() {
       movementType = movement.type;
       amountInputController.text = movement.amount.toStringAsFixed(2);
       amount = movement.amount;
-      source = movement.source ?? movement.target!;
-      target = movement.target ?? movement.source!;
+      source = movement.source ?? movement.target ?? fallbackAccount;
+      target = movement.target ?? movement.source ?? fallbackAccount;
       creationDate = movement.creationDate ?? DateTime.now();
       descriptionInputController.text = movement.description;
-      var storedRate = movement.conversionRate ?? 1;
-      rawConversionRate = isRateInverse ? 1 / storedRate : storedRate;
+      var storedRate = movement.conversionRate;
+      rawConversionRate = storedRate == null ? 0 : (isRateInverse ? 1 / storedRate : storedRate);
       conversionRateInputController.text = rawConversionRate.toStringAsFixed(2);
-      selectedCategory = movement.category;
+      selectedCategory = movement.category.isEmpty ? null : movement.category;
     });
   }
 

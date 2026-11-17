@@ -128,6 +128,10 @@ class UtilsService {
     return amount;
   }
 
+  bool isRateInverse(Currency source, Currency target) {
+    return source != target && convertCurrencies(1, source, target) < 1;
+  }
+
   double convertCurrenciesAt(double amount, Currency from, Currency to, DateTime date) {
     if (from == to) return amount;
     var rates = _resolveRatesAt(date);
