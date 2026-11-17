@@ -66,12 +66,43 @@ interpreted `Movement`), `stop()` and `cancel()`. Failures arrive as `AIExceptio
 The service holds the state of the one listening in progress: starting a `listen` cancels any previous
 one, so there is never more than one at a time.
 
-The only implementation is `InDeviceAIService`
-([in_device_ai.service.dart](../lib/services/in_device_ai.service.dart)): it listens with
-`speech_to_text` (on-device) and interprets the transcript with Apple Foundation Models. It is
-registered in `GetIt` at startup (`initializeServices()`). To use another engine (a cloud API, a model
-that takes audio directly) add another class implementing `AIService` and register it instead; the
-UI does not change. How a sentence becomes a `Movement` is described in
+There are two implementations, registered in `GetIt` at startup (`initializeServices()`). To use
+another engine (another API, a model that takes audio directly) add a class implementing `AIService`
+and register it instead; the UI does not change.
+
+**Active: `GeminiAIService`** ([gemini_ai.service.dart](../lib/services/gemini_ai.service.dart)). It listens
+with `speech_to_text` (on-device) and sends the transcript to the Gemini API (`googleai_dart`) with a
+full context prompt (date, accounts, categories, the description history per category). It trusts the
+structured JSON it returns; Dart only checks that names exist and applies the default account. It needs
+the key at build time:
+
+```text
+flutter run --dart-define-from-file=.env
+```
+
+`.env` holds `GEMINI_API_KEY=...` (it is git-ignored). `GEMINI_MODEL` overrides the model
+(default `gemini-3.8-flash`). The key is compiled into the binary and sent in a request
+header; do not distribute such a build. Without the key `isAvailable()` is false.
+
+**Legacy: `InDeviceAIService`** ([in_device_ai.service.dart](../lib/services/in_device_ai.service.dart)).
+It listens with `speech_to_text` and interprets the transcript with Apple Foundation Models, with no
+network, no cost and no data leaving the phone. It is kept as legacy code in case we want to switch back;
+build with `--dart-define=USE_IN_DEVICE_AI=true` to register it instead of Gemini. Because the small
+on-device model makes more mistakes, it carries the Dart-side verification (evidence text checked against
+the transcript, history-based category resolution, description filtering) that Gemini does not need.
+
+Comparison on the same 28 test sentences with the real accounts, categories and history:
+
+| Service | Correct | Median latency | Cost per command |
+| --- | --- | --- | --- |
+| `InDeviceAIService` | 20/28 | 1.8 s | 0 |
+| `GeminiAIService` with `gemini-3.8-flash` | 27/28 | 6.7 s | ≈ USD 0.005 |
+| `GeminiAIService` with `gemini-4-hydrogen` | 27/28 | 4.4 s | ≈ USD 0.010 |
+
+The one sentence all of them miss is an exchange with no account named: the conversion rate is dropped
+when the transfer accounts are unresolved.
+
+How a sentence becomes a `Movement` is described in
 [movements.md](features/movements.md#voice-assistant-creating-a-movement-by-speaking).
 
 ## The `initialized` gate

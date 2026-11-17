@@ -357,6 +357,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "2.2.0"
+  googleai_dart:
+    dependency: "direct main"
+    description:
+      name: googleai_dart
+      sha256: "0f706604df04bb316c9cd68f06acef33d3e2be4e17a9fe53f6458415e2e9d1de"
+      url: "https://pub.dev"
+    source: hosted
+    version: "13.1.0"
   graphs:
     dependency: transitive
     description:

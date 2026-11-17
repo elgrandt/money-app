@@ -7,6 +7,7 @@ enum AIFailure {
   permissionDenied,
   nothingHeard,
   interpretationFailed,
+  offline,
   cancelled,
 }
 

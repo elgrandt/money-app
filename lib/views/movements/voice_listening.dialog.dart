@@ -13,6 +13,7 @@ const _failureMessages = {
   AIFailure.permissionDenied: 'Necesito permiso de micrófono y de reconocimiento de voz.',
   AIFailure.nothingHeard: 'No escuché nada. Intentá de nuevo.',
   AIFailure.interpretationFailed: 'No pude interpretar el movimiento.',
+  AIFailure.offline: 'No pude conectarme. Revisá tu conexión.',
 };
 
 enum _VoiceDialogStage {
