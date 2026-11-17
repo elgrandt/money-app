@@ -1,6 +1,6 @@
 import 'dart:math';
 import 'package:fl_chart/fl_chart.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 
 enum LabelPosition {
   none,
@@ -47,7 +47,7 @@ class EasyPieChart<T> extends StatelessWidget {
   Widget build(BuildContext context) {
     if (total == 0) return Container();
     List<Color> colors = this.colors != null ? this.colors! : items.map((item) => Colors.primaries[randomGenerator!.nextInt(Colors.primaries.length)].shade700).toList();
-    if (this.label != null) {
+    if (label != null) {
       switch (labelPosition) {
         case LabelPosition.left:
           return Row(

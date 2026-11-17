@@ -1,5 +1,5 @@
 import 'package:events_emitter/events_emitter.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:get_it/get_it.dart';
 import 'package:logger/logger.dart';
 import 'package:money/models/account.model.dart';
@@ -106,10 +106,7 @@ class _AccountListState extends State<AccountList> {
       padding: const EdgeInsets.symmetric(horizontal: 25, vertical: 20),
       itemBuilder: (context, index) => buildAccountItem(context, accounts![index], index),
       itemCount: accounts!.length,
-      onReorder: (oldIndex, newIndex) {
-        if (oldIndex < newIndex) {
-          newIndex -= 1;
-        }
+      onReorderItem: (oldIndex, newIndex) {
         var account = accounts!.removeAt(oldIndex);
         accounts!.insert(newIndex, account);
         updateAccountsOrder();

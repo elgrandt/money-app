@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:intl/intl.dart';
 import 'package:money/models/account.model.dart';
 import 'package:money/models/movement.model.dart';
@@ -22,9 +22,9 @@ class CategoryMovementsDialog extends StatefulWidget {
 class _CategoryMovementsDialogState extends State<CategoryMovementsDialog> {
   late Currency currency = widget.initialCurrency;
 
-  get title => 'Movimientos de ${ widget.category }';
+  String get title => 'Movimientos de ${ widget.category }';
 
-  get description => 'Del ${ formatDate(widget.dateFrom) } al ${ formatDate(widget.dateTo) }';
+  String get description => 'Del ${ formatDate(widget.dateFrom) } al ${ formatDate(widget.dateTo) }';
 
   String formatDate(DateTime date) => DateFormat('dd/MM/yyyy').format(date);
 

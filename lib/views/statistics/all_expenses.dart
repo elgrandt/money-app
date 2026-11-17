@@ -1,4 +1,4 @@
-import 'package:flutter/cupertino.dart';
+import 'package:cupertino_ui/cupertino_ui.dart';
 import 'package:money/models/account.model.dart';
 import 'package:money/models/movement.model.dart';
 import 'package:money/views/generics/currency_selector.dart';

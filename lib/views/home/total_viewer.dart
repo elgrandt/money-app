@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:get_it/get_it.dart';
 import 'package:money/models/account.model.dart';
 import 'package:money/services/database.service.dart';
@@ -21,7 +21,7 @@ class _TotalViewerState extends State<TotalViewer> {
   var databaseService = GetIt.instance.get<DatabaseService>();
   bool _visible = false;
 
-  get visible {
+  bool get visible {
     if (widget.account != null) {
       return widget.account!.showTotal;
     } else {
@@ -46,7 +46,7 @@ class _TotalViewerState extends State<TotalViewer> {
     }
   }
 
-  switchVisible() {
+  void switchVisible() {
     if (widget.account == null) {
       setState(() {
         _visible = !_visible;
