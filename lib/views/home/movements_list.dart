@@ -1,6 +1,6 @@
 import 'package:events_emitter/events_emitter.dart';
-import 'package:flutter/cupertino.dart';
-import 'package:flutter/material.dart';
+import 'package:cupertino_ui/cupertino_ui.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:get_it/get_it.dart';
 import 'package:intl/intl.dart';
 import 'package:logger/logger.dart';
@@ -35,7 +35,7 @@ class MovementsListState extends State<MovementsList> {
   String search = '';
   var logger = GetIt.instance.get<Logger>();
 
-  get filteredMovements {
+  List<Movement>? get filteredMovements {
     if (movements == null) return null;
     var filtered = utilsService.filterList(movements!, search, (Movement movement) {
       return '${ movement.category }*****${ movement.description }';
@@ -149,7 +149,7 @@ class MovementListItem extends StatelessWidget {
   final Currency currency;
   final Account? account;
 
-  get amount {
+  double get amount {
     double amountOnTarget;
     Currency currencyFrom;
     if (movement.conversionRate != null && account?.id == movement.target?.id) {

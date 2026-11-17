@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:get_it/get_it.dart';
 import 'package:money/models/category.model.dart';
 import 'package:money/models/movement.model.dart';
@@ -20,13 +20,13 @@ class _NewCategoryDialogState extends State<NewCategoryDialog> {
   var databaseService = GetIt.instance.get<DatabaseService>();
   List<String> otherCategoryNames = [];
 
-  get isEditing => widget.category != null;
+  bool get isEditing => widget.category != null;
 
-  get title => isEditing ? 'Editar categoría' : 'Nueva categoría';
+  String get title => isEditing ? 'Editar categoría' : 'Nueva categoría';
 
-  get submitLabel => isEditing ? 'Guardar' : 'Crear';
+  String get submitLabel => isEditing ? 'Guardar' : 'Crear';
 
-  get canSubmit {
+  bool get canSubmit {
     return _formKey.currentState != null && _formKey.currentState!.validate();
   }
 

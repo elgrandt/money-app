@@ -1,5 +1,5 @@
-import 'package:flutter/cupertino.dart';
-import 'package:flutter/material.dart';
+import 'package:cupertino_ui/cupertino_ui.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:get_it/get_it.dart';
 import 'package:intl/intl.dart';
 import 'package:money/models/movement.model.dart';
@@ -73,7 +73,7 @@ class _MovementDetailsDialogState extends State<MovementDetailsDialog> {
     return [];
   }
 
-  openDeleteMovementConfirmationDialog() async {
+  Future<void> openDeleteMovementConfirmationDialog() async {
     var result = await utilsService.confirm(context, title: 'Eliminar movimiento', message: '¿Estás seguro que deseas eliminar este movimiento?');
     if (result == true) {
       await databaseService.movementsRepository.remove(widget.movement);
@@ -82,7 +82,7 @@ class _MovementDetailsDialogState extends State<MovementDetailsDialog> {
     }
   }
 
-  openEditMovementDialog() async {
+  Future<void> openEditMovementDialog() async {
     var result = await showDialog<Movement?>(context: context, builder: (context) {
       return NewMovementDialog(movement: widget.movement);
     });

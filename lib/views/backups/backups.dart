@@ -1,6 +1,6 @@
 import 'dart:io';
 import 'package:file_picker/file_picker.dart';
-import 'package:flutter/cupertino.dart';
+import 'package:cupertino_ui/cupertino_ui.dart';
 import 'package:get_it/get_it.dart';
 import 'package:money/services/database.service.dart';
 import 'package:money/views/generics/navbar.dart';
@@ -12,7 +12,7 @@ class Backups extends StatelessWidget {
 
   Backups({super.key});
 
-  saveBackup(BuildContext context) async {
+  Future<void> saveBackup(BuildContext context) async {
     var dir = await getApplicationDocumentsDirectory();
     File file = File('${ dir.path }/db.sqlite');
     String fileName = DateTime.now().toIso8601String();
@@ -49,7 +49,7 @@ class Backups extends StatelessWidget {
     });
   }
 
-  openDeleteDataConfirmationDialog(BuildContext context) async {
+  Future<void> openDeleteDataConfirmationDialog(BuildContext context) async {
     var result = await utilsService.confirm(context, title: 'Eliminar todos los datos', message: '¿Estás seguro que deseas eliminar todos los datos de la aplicación?\nEsta acción no se puede deshacer, se recomienda realizar un backup antes de continuar.');
     if (result == true) {
       await GetIt.instance.get<DatabaseService>().deleteAllData();

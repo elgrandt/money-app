@@ -52,6 +52,8 @@ dependencies:
   apple_foundation_models: ^0.5.2
   speech_to_text: ^7.5.0
   googleai_dart: ^13.1.0
+  material_ui: ^1.11.1
+  cupertino_ui: ^1.1.7
 
 dev_dependencies:
   flutter_test:

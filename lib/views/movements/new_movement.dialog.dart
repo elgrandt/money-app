@@ -1,6 +1,6 @@
 import 'package:events_emitter/events_emitter.dart';
-import 'package:flutter/cupertino.dart';
-import 'package:flutter/material.dart';
+import 'package:cupertino_ui/cupertino_ui.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:get_it/get_it.dart';
 import 'package:intl/intl.dart';
 import 'package:logger/logger.dart';
@@ -50,11 +50,11 @@ class _NewMovementDialogState extends State<NewMovementDialog> {
 
   EventListener<TableUpdateEvent<Category>>? categoriesListener;
 
-  get canSubmit {
+  bool get canSubmit {
     return _formKey.currentState != null && _formKey.currentState!.validate() && selectedCategory != null;
   }
 
-  get isEditing {
+  bool get isEditing {
     return widget.movement?.id != null;
   }
 
